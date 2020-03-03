@@ -1,0 +1,34 @@
+/*
+	FEATURES:
+		gerar um sinal de 40kHz em 64 canais, com resolução de fase de ao menos 1/8 (320kHz ou 3.125ns)
+		os transdutores podem ser ligados em pinos aleatórios. Ao iniciar, um mapeamento é carregado a partir de uma matriz estática no código (montada manualmente).
+		o sinal deve ser compensado de forma que todos os transdutores emitam o mesmo sinal com a mesma fase (defeitos de fabricação). Ao iniciar, um mapeamento é carregado a partir de uma matriz estática no código (montada manualmente).
+		receber comandos pela porta serial.
+		utilizar um método rápido para fazer os assigns das portas, de preferência um que ajuste várias portas de uma só vez.
+		posição default: centro
+		
+		
+	
+	SCOPE:
+		array quadrado 8x8
+		recebe uma coordenada e cria um ponto focal nessa coordenada (tridimensional)
+	
+	UPGRADES:
+		use potentiometer to fine tune the frequency
+		use analog joystick to move the focal point
+		rotina de calibração automatica: assigment dos pinos de io para cada posição da matriz (o usuário utiliza um receptor, que deve ser deslizado sobre cada transdutor da matriz, em uma ordem específica. O software gera pulsos em cada pino até detectar retorno do sinal pelo microfone, descobrino o pino da posição xy da matriz. salvar a calibração na eeprom)
+		rotina de calibração automatica: compensação de fase (o usuário utiliza um receptor, que deve ser deslizado sobre cada transdutor da matriz, em uma ordem específica. O software gera um sinal no transdutor e mede o tempo de resposta, ajustando um parametro de compensação de fase. salvar na eeprom)
+		move o ponto focal com uma velocidade parametrizavel a partir da posição atual até uma posição xy.
+		usar linguagem de programação de robô para definir a tragetória.
+			
+		
+		
+Ultrasonic
+	cria uma estrutura que represeta uma matriz.
+	A matriz é uma lista de uma estrutura que representa um transdutor.
+	
+	
+	
+	rotina que calcula a fase e amplitude de cada transdutor para focar no ponto x y. Isso é salvo na matriz
+	
+	rotina que gera o sinal baseado no estado da matrix
