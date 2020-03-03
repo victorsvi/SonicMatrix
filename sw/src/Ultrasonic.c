@@ -23,7 +23,8 @@
 
 #define SOUND_SPEED 343000 //speed of the sound in the medium in milimeters per second
 #define SOUND_FREQ 40000 //frequency of the signal
-#define RESOLUTION 8 //in how many discrete steps the period of the signal is divided. It defines the phase delay resolution and the amplitude resolution
+//#define RESOLUTION 8 //in how many discrete steps the period of the signal is divided. It defines the phase delay resolution and the amplitude resolution
+
 
 
 /*

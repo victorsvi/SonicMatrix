@@ -23,6 +23,8 @@ union u_memory {
 
 t_array *array;
 
+//pinToBank() //converte pino para porta
+//criar um timer para gerar o sinal de 40khz. com resolução de 1/8, o timer deve ter frequência de 320kHz (3.125ns)
 
 
 void setup () {
