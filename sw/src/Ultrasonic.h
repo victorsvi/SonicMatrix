@@ -8,6 +8,19 @@
 
 #include <stdint.h>
 
+
+///RESOLUTION: Define em quantos steps um período será dividido (quantos bits terá o padrão e cara transdutor). Para uma coordenada, armazenar o padrão em um inteiro para cada transd
+//para gerar o sinal, basta ler os bits sequencialmente
+//fazer a resolução variável, de no máximo 16 (16bits)
+
+duty -> define a quantidade de 1s e 0s (bits on = duty/resolução; 3 = 30/10) (se o duty for de 0 a 255, fazer bits on = (((duty*100)/ 255)/resolução))
+30% -> ###_______
+50% -> #####_____
+
+phase -> define quanto deslocar (bits deslocados = fase / (360/resolução); 2 = 72 / 360 / 10) (se a fase for de 0 a 255, fazer bits deslocados = (fase/(255)/resolução))
+0   -> #####_____
+2   -> __#####___ (72°)
+
 typedef struct s_transd {
 	uint8_t port_pin; //pin on which the transducer is connected
 	//uint8_t *port_bank; //pin's port bank
