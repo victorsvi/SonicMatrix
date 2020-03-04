@@ -17,101 +17,169 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-#include <EEPROM.h>
-#include <Arduino.h>
+//#include <EEPROM.h>
+//#include <Arduino.h>
 
 
-#define SOUND_SPEED 343000 //speed of the sound in the medium in milimeters per second
+#define SOUND_SPEED 343600 //speed of the sound in the medium in milimeters per second (at 20°C dry air)
 #define SOUND_FREQ 40000 //frequency of the signal
 //#define RESOLUTION 8 //in how many discrete steps the period of the signal is divided. It defines the phase delay resolution and the amplitude resolution
 
-
-
-/*
-	Initializes the array, creating a list of transducers.
-	The list is ordered by the position of the trasducer, frist by the x axys then by the y axys. An example of a array 2x2 is {(0,0);(0,1);(1,0);(1,1)}, where the ids are 1, 2, 3 and 4, respectvely.
+uint8_t transd_array_init( t_transd_array *transd_array, const uint8_t size_x, const uint8_t size_y, const uint8_t elem_diameter, const uint8_t elem_separation, const uint8_t phase_res ){
 	
-*/
-t_array *Array_init( uint8_t size_x, uint8_t size_y, uint8_t elem_diameter, uint8_t elem_separation ){
+	uint8_t ret;
+	uint8_t x,y;
 	
-	t_array *array = NULL;
-	t_transd *transd = NULL;
-	t_transd *transd_last = NULL;
-	uint8_t id_curr = 1;
-	uint8_t count_x;
-	uint8_t count_y;
-	
-	//vaidates the input parameters. If any of then is smaller or equal to zero, the calculations will be invalid
-	if( size_x == 0 || size_y == 0 || elem_diameter == 0 ) {
-		return NULL;
+	if(transd_array == NULL) {
+		#IFDEF DEBUG DEBUG_MSG("The transducer array pointer is null") #ENDIF
+		return 40;	
 	}
 	
-	array = malloc(sizeof(t_array));
-	if( array == NULL ) {
-		return NULL;
+	if(size_x == 0 || size_y == 0) {
+		#IFDEF DEBUG DEBUG_MSG("Invalid size for the transducer array") #ENDIF
+		return 41;
+	}
+
+	if(elem_diameter == 0) {
+		#IFDEF DEBUG DEBUG_MSG("Invalid value for transducer diameter") #ENDIF
+		return 42;
 	}
 	
-	array->size_x = size_x;
-	array->size_y = size_y;
-	array->elem_diameter = elem_diameter;
-	array->elem_separation = elem_separation;
+	if(phase_res == 0) {
+		#IFDEF DEBUG DEBUG_MSG("Invalid value for phase resolution") #ENDIF
+		return 43;
+	}
 	
-	for(count_y = 0; count_y < size_y; count_y++) {
-		for(count_x = 0; count_x < size_x; count_x++) { //for each element of the array
-		
-			/// passar a usar um array. mais rápido. criar o array ordenado por pino!
-			transd = malloc(sizeof(t_transd));
-			if( transd == NULL ) {
-				return NULL;
-			}
+	transd_array->size_x = size_x;
+	transd_array->size_y = size_y;
+	transd_array->elem_diameter = elem_diameter;
+	transd_array->elem_separation = elem_separation;
+	transd_array->phase_res = phase_res;
+	
+	transd_array->curr_step = 0;
+	
+	transd_array->transd_ptr = malloc(sizeof(t_transd) * size_x * size_y);
+	if(transd_array->transd_ptr == NULL){
+		#IFDEF DEBUG DEBUG_MSG("Memory allocation error") #ENDIF
+		return 1;
+	}
+	
+	for(x = 0; x < size_x; x++){
+		for(y = 0; y < size_y; y++){
 			
-			transd->id = id_curr;
-			transd->pin = 0;
-			transd->phase_comp = 0;
-			transd->x = ((elem_diameter / 2) + (elem_diameter * count_x) + (elem_separation * count_x)); //calculates the position of the transducer on the array
-			transd->y = ((elem_diameter / 2) + (elem_diameter * count_y) + (elem_separation * count_y));//calculates the position of the transducer on the array
-			transd->phase = 0;
-			transd->amplitude = 0;
-			transd->next = NULL;
-			/* here is an example of the calculation of the position in one axys (elem_diameter = 16, elem_separation = 2)
-			 
-			  diameter           separation
-			 |-------|          |--|
-			   _____      _____      _____  
-			  /     \    /     \    /     \ 
-			 |   -   |  |   -   |  |   -   |
-			  \_____/    \_____/    \_____/ 
-
-			 |   |   |  |   |   |  |   |   |
-			 0   8  16  18  26 34  36  44 52
-			 -------------------------------> 
-			 */
-			
-			if( transd_last == NULL ){ //the frist node is pointed by the root pointer
-				array->array = transd;
+			ret = transd_init( (transd_array->transd_ptr + x * size_y + y) /* &(transd_array->transd_ptr[x][y]) */, x, y, 0, 0, elem_diameter, elem_separation );
+			if(ret != 0) {
+				return ret;
 			}
-			else { //the other nodes are pointed by the last node
-				transd_last->next = transd;
-			}
-			transd_last=transd;
-			
-			id_curr++;
 		}
 	}
 	
-	return array;	
-} //Array_init
+	return 0;
+} //transd_array_init
 
-
-t_transd *Transd_get( t_array *array, uint8_t id ) {
+uint8_t transd_array_set( t_transd_array *transd_array, const uint8_t index_x, const uint8_t index_y, const uint8_t port_pin, const int8_t phase_comp ){
 	
-} //Transd_get
-
-void Transd_set( t_array *array, uint8_t id, uint8_t pin, int8_t phase_comp ) {
+	uint8_t ret;
 	
-} //Transd_set
+	if(transd_array == NULL) {
+		#IFDEF DEBUG DEBUG_MSG("The transducer array pointer is null") #ENDIF
+		return 40;	
+	}
+	
+	ret = transd_set( (transd_array->transd_ptr + x * size_y + y), port_pin, phase_comp );
+	
+	return ret;
+} //transd_array_set
+
+uint8_t transd_array_calcfocus( t_transd_array *transd_array, const uint8_t focus_x, const uint8_t focus_y, const uint8_t focus_z ) {
+	
+	uint8_t ret;
+	uint8_t x,y;
+	
+	if(transd_array == NULL) {
+		#IFDEF DEBUG DEBUG_MSG("The transducer array pointer is null") #ENDIF
+		return 40;	
+	}
+	
+	for(x = 0; x < size_x; x++){
+		for(y = 0; y < size_y; y++){
+			
+			ret = transd_calcfocus( (transd_array->transd_ptr + x * size_y + y), transd_array->phase_res, transd_array->curr_step, focus_x, focus_y, focus_z );
+			if(ret != 0) {
+				return ret;
+			}
+		}
+	}
+	
+	return 0;
+} //transd_array_calcfocus
+
+uint8_t transd_array_calcflat( t_transd_array *transd_array, const uint8_t amplitude ) {
+	
+	uint8_t ret;
+	uint8_t x,y;
+	
+	if(transd_array == NULL) {
+		#IFDEF DEBUG DEBUG_MSG("The transducer array pointer is null") #ENDIF
+		return 40;	
+	}
+	
+	for(x = 0; x < size_x; x++){
+		for(y = 0; y < size_y; y++){
+			
+			ret = transd_calcflat( (transd_array->transd_ptr + x * size_y + y), transd_array->phase_res, transd_array->curr_step, amplitude );
+			if(ret != 0) {
+				return ret;
+			}
+		}
+	}
+	
+	return 0;
+} //transd_array_calcflat
 
 
+
+
+/* PRIVATE */
+
+uint8_t transd_init( t_transd *transd, const uint8_t index_x, const uint8_t index_y, const uint8_t port_pin, const int8_t phase_comp, const uint8_t elem_diameter, const uint8_t elem_separation ) {
+	
+	if(transd == NULL) {
+		#IFDEF DEBUG DEBUG_MSG("The transducer pointer is null") #ENDIF
+		return 44;	
+	}
+	
+	if(elem_diameter == 0) {
+		#IFDEF DEBUG DEBUG_MSG("Invalid value for transducer diameter") #ENDIF
+		return 42;
+	}
+			
+	transd->port_pin = port_pin;
+	transd->phase_comp = phase_comp;
+	transd->x = ((elem_diameter / 2) + (elem_diameter * index_x) + (elem_separation * index_x)); //calculates the position of the transducer on the array
+	transd->y = ((elem_diameter / 2) + (elem_diameter * index_y) + (elem_separation * index_y)); //calculates the position of the transducer on the array
+	transd->phase = 0;
+	transd->amplitude = 0;
+	/* here is an example of the calculation of the position in one axys (elem_diameter = 16, elem_separation = 2)
+	 
+	  diameter           separation
+	 |-------|          |--|
+	   _____      _____      _____  
+	  /     \    /     \    /     \ 
+	 |   -   |  |   -   |  |   -   |
+	  \_____/    \_____/    \_____/ 
+
+	 |   |   |  |   |   |  |   |   |
+	 0   8  16  18  26 34  36  44 52
+	 -------------------------------> 
+	 */
+} //transd_init
+
+uint8_t transd_set( t_transd *transd, uint8_t port_pin, int8_t phase_comp );
+
+uint8_t transd_calcfocus( t_transd *transd, const uint8_t phase_res, const uint8_t curr_step, const uint8_t focus_x, const uint8_t focus_y, const uint8_t focus_z );
+
+uint8_t transd_calcflat( t_transd *transd, const uint8_t phase_res, const uint8_t curr_step, const uint8_t amplitude );
 
 
 

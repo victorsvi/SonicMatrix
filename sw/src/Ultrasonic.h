@@ -31,9 +31,9 @@ typedef struct s_transd_array {
 
 /* PUBLIC */
 
-uint8_t transd_array_set( t_transd_array *transd_array, const uint8_t index_x, const uint8_t index_y, const uint8_t port_pin, const int8_t phase_comp );
-
 uint8_t transd_array_init( t_transd_array *transd_array, const uint8_t size_x, const uint8_t size_y, const uint8_t elem_diameter, const uint8_t elem_separation, const uint8_t phase_res );
+
+uint8_t transd_array_set( t_transd_array *transd_array, const uint8_t index_x, const uint8_t index_y, const uint8_t port_pin, const int8_t phase_comp );
 
 uint8_t transd_array_calcfocus( t_transd_array *transd_array, const uint8_t focus_x, const uint8_t focus_y, const uint8_t focus_z );
 
@@ -41,13 +41,13 @@ uint8_t transd_array_calcflat( t_transd_array *transd_array, const uint8_t ampli
 
 /* PRIVATE */
 
-uint8_t transd_init( t_transd *transd, const uint8_t index_x, const uint8_t index_y, const uint8_t port_pin, const int8_t phase_comp, const uint8_t elem_diameter, const uint8_t elem_separation );
+//uint8_t transd_init( t_transd *transd, const uint8_t index_x, const uint8_t index_y, const uint8_t port_pin, const int8_t phase_comp, const uint8_t elem_diameter, const uint8_t elem_separation );
 
-uint8_t transd_set( t_transd *transd, uint8_t port_pin, int8_t phase_comp );
+//uint8_t transd_set( t_transd *transd, uint8_t port_pin, int8_t phase_comp );
 
-uint8_t transd_calcfocus( t_transd *transd, const uint8_t phase_res, const uint8_t curr_step, const uint8_t focus_x, const uint8_t focus_y, const uint8_t focus_z );
+//uint8_t transd_calcfocus( t_transd *transd, const uint8_t phase_res, const uint8_t curr_step, const uint8_t focus_x, const uint8_t focus_y, const uint8_t focus_z );
 
-uint8_t transd_calcflat( t_transd *transd, const uint8_t phase_res, const uint8_t curr_step, const uint8_t amplitude );
+//uint8_t transd_calcflat( t_transd *transd, const uint8_t phase_res, const uint8_t curr_step, const uint8_t amplitude );
 
 
 #ifdef __cplusplus
