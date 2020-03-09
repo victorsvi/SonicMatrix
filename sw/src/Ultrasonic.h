@@ -12,7 +12,7 @@
 ///RESOLUTION: Define em quantos steps um período será dividido (quantos bits terá o padrão e cara transdutor). Para uma coordenada, armazenar o padrão em um inteiro para cada transd
 //para gerar o sinal, basta ler os bits sequencialmente
 //fazer a resolução variável, de no máximo 16 (16bits)
-
+/*
 duty -> define a quantidade de 1s e 0s (bits on = duty/resolução; 3 = 30/10) (se o duty for de 0 a 255, fazer bits on = (((duty*100)/ 255)/resolução))
 30% -> ###_______
 50% -> #####_____
@@ -20,6 +20,15 @@ duty -> define a quantidade de 1s e 0s (bits on = duty/resolução; 3 = 30/10) (
 phase -> define quanto deslocar (bits deslocados = fase / (360/resolução); 2 = 72 / 360 / 10) (se a fase for de 0 a 255, fazer bits deslocados = (fase/(255)/resolução))
 0   -> #####_____
 2   -> __#####___ (72°)
+
+W = S / f (wave length = sound speed / frequency)
+
+Dij = ( (Xij - x)^2 + (Zij - z)^2 + (-z)^2 )^1/2
+
+Pij = ( Dij * 255 ) / W   (testar o que acontece se Dij > W, já que Pij é uint8_t)
+
+
+*/
 
 typedef struct s_transd {
 	uint8_t port_pin; //pin on which the transducer is connected
@@ -30,6 +39,7 @@ typedef struct s_transd {
 	uint8_t y; //y position of the center of the transducer in milimeters
 	uint8_t phase; //current discrete phase delay of the transducer (how many steps the signal will delay. Depends on the signal resolution)
 	uint8_t amplitude; //current discrete amplitude of the transducer (how many steps the signal will be on, like a duty cycle. Depends on the signal resolution)
+	uint8_t pattern;
 } t_transd;
 
 typedef struct s_transd_array {
