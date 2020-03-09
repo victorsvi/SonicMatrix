@@ -40,6 +40,7 @@ t_array *array;
 	# Dump do cálculo das fases
 	# Dump das portas
 	# Para testar o mapeamento dos pinos (exibir a coordenada x, y e o numero do pino em display, enquanto gera um sinal no pino. a entrada serial indica qual coordenada checar)
+	# Comparar a sqrt() do arduino com a de inteiro (custom), calculando a raiz de vários números e contando o tempo para a conclusão.
 */
 
 

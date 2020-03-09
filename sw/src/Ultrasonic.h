@@ -25,7 +25,7 @@ W = S / f (wave length = sound speed / frequency)
 
 Dij = ( (Xij - x)^2 + (Zij - z)^2 + (-z)^2 )^1/2
 
-Pij = ( Dij * 255 ) / W   (testar o que acontece se Dij > W, já que Pij é uint8_t)
+Pij = ( Dij * 256 ) / W   (testar o que acontece se Dij > W, já que Pij é uint8_t)(no pc funcionou!)
 
 
 */
