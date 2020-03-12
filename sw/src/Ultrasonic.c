@@ -147,22 +147,24 @@ uint8_t transd_getPattern( const uint8_t phase_res, const uint8_t phase_comp, co
 	RESOLUTION: Define em quantos steps um período será dividido (quantos bits terá o padrão e cara transdutor). Para uma coordenada, armazenar o padrão em um inteiro para cada transd
 	para gerar o sinal, basta ler os bits sequencialmente
 	fazer a resolução variável, de no máximo 16 (16bits)
-	
-	duty -> define a quantidade de 1s e 0s (bits on = duty/resolução; 3 = 30/10) (se o duty for de 0 a 255, fazer bits on = (((duty*100)/ 255)/resolução))
-	30% -> _______###
-	50% -> _____#####
-
-	phase -> define quanto deslocar (bits deslocados = fase / (360/resolução); 2 = 72 / 360 / 10) (se a fase for de 0 a 255, fazer bits deslocados = (fase/(255)/resolução))
-	0   -> _____##### (0°)
-	2   -> ___#####__ (72°)
-	8   -> ##_____### (288°) (5 amp, 8 ph)
 	*/
 	
 	uint8_t bits_duty, bits_phase;
 	uint16_t pattern = 0;
 	
+	/*
+		duty -> define a quantidade de 1s e 0s (bits on = duty/resolução; 3 = 30/10) (se o duty for de 0 a 255, fazer bits on = (((duty*100)/ 255)/resolução))
+		30% -> _______###
+		50% -> _____#####
+	*/
 	bits_duty = ((duty * 100) / 255) / phase_res);
 	
+	/*
+		phase -> define quanto deslocar (bits deslocados = fase / (360/resolução); 2 = 72 / 360 / 10) (se a fase for de 0 a 255, fazer bits deslocados = (fase/(255)/resolução))
+		0   -> _____##### (0°)
+		2   -> ___#####__ (72°)
+		8   -> ##_____### (288°) (5 amp, 8 ph)
+	*/
 	bits_phase = (phase / (255 / resolução));
 	
 	//sets the (Nth + 1) bit = 1 (00001000b for n = 3) then subtracts one to make all the lesser bits = 1 (00000111b for n = 3) 
