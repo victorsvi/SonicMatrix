@@ -142,7 +142,7 @@ uint8_t transd_array_calcflat( t_transd_array *transd_array, const uint8_t ampli
 
 /* PRIVATE */
 
-uint8_t transd_getPattern( const uint8_t phase_res, const uint8_t phase_comp, const uint8_t phase, const uint8_t amplitude ){
+uint8_t transd_getPattern( const uint8_t phase_res, const uint8_t phase_comp, const uint8_t phase, const uint8_t duty ){
 	/*
 	RESOLUTION: Define em quantos steps um período será dividido (quantos bits terá o padrão e cara transdutor). Para uma coordenada, armazenar o padrão em um inteiro para cada transd
 	para gerar o sinal, basta ler os bits sequencialmente
@@ -161,8 +161,21 @@ uint8_t transd_getPattern( const uint8_t phase_res, const uint8_t phase_comp, co
 	uint8_t bits_duty, bits_phase;
 	uint16_t pattern = 0;
 	
+	bits_duty = ((duty * 100) / 255) / phase_res);
+	
+	bits_phase = (phase / (255 / resolução));
+	
 	//sets the (Nth + 1) bit = 1 (00001000b for n = 3) then subtracts one to make all the lesser bits = 1 (00000111b for n = 3) 
 	pattern = (1 << bits_duty) - 1; 
+	
+	//shifts the duty cycle pattern to change phase
+	pattern <<= bits_phase;
+	
+	//if phase shifts more bits than the duty cycle bits, the pattern lost some duty cycle information (the bits that overflow when shifting) 
+	if(bits_phase > bits_duty) {
+		//generates
+		pattern |= (1 << (bits_phase - bits_duty)) - 1; 
+	}
 	
 	
 	
