@@ -1,0 +1,27 @@
+{
+	"size_x": 8,
+	"size_y": 8,
+	"elem_diameter": 12,
+	"elem_separation": 2,
+	"phase_res": 10,
+	"transd_ptr": [
+	{
+		"port_pin": 0,
+		"phase_comp": 0,
+		"x": 50,
+		"y": 60,
+		"phase": 10,
+		"duty_cycle": 128,
+		"pattern": ""
+	},
+	{
+		"port_pin": 0,
+		"phase_comp": 0,
+		"x": 50,
+		"y": 60,
+		"phase": 10,
+		"duty_cycle": 128,
+		"pattern": ""
+	}
+	]
+}
