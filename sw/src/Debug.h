@@ -6,7 +6,11 @@
 	extern "C" {
 #endif
 
-#DEFINE DEBUG_MSG(msg) Serial.Print(msg);Serial.Print(" on ");Serial.Print(__func__);Serial.Print(":");Serial.Print(__FILE__);Serial.Print(":");Serial.Print(__LINE__);
+#define DEBUG
+
+//#define DEBUG_MSG(msg) Serial.Print(msg);Serial.Print(" on ");Serial.Print(__func__);Serial.Print(":");Serial.Print(__FILE__);Serial.Print(":");Serial.Print(__LINE__);
+
+#define DEBUG_MSG(msg) printf("%s on %s:%s:%d", msg, __func__, __FILE__, __LINE__);
 
 #ifdef __cplusplus
 	}

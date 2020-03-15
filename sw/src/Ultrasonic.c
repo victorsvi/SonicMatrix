@@ -17,36 +17,57 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-//#include <EEPROM.h>
-//#include <Arduino.h>
+
+#include "Debug.h"
+#include "Ultrasonic.h"
 
 #define SOUND_SPEED 343600 //speed of the sound in the medium in milimeters per second (at 20°C dry air)
 #define SOUND_FREQ 40000 //frequency of the signal
-#define SOUND_WAVELEN SOUND_SPEED/SOUND_FREQ //wave length (8.6 mm)
+#define SOUND_WAVELEN 8//(SOUND_SPEED/SOUND_FREQ) //wave length (8.6 mm)
 
-uint8_t transd_array_init( t_transd_array *transd_array, const uint8_t size_x, const uint8_t size_y, const uint8_t elem_diameter, const uint8_t elem_separation, const uint8_t phase_res ){
+uint32_t transd_sqrt_int (const uint32_t x);
+uint16_t transd_getPattern( const uint8_t phase_res, const uint8_t phase_comp, const uint8_t phase, const uint8_t duty );
+
+uint8_t transd_init( t_transd *transd, const uint8_t index_x, const uint8_t index_y, const uint8_t port_pin, const uint8_t phase_comp, const uint8_t elem_diameter, const uint8_t elem_separation );
+uint8_t transd_set( t_transd *transd, uint8_t port_pin, uint8_t phase_comp );
+uint8_t transd_calcfocus( t_transd *transd, const uint8_t phase_res, const uint8_t duty_cycle, const uint8_t focus_x, const uint8_t focus_y, const uint8_t focus_z );
+uint8_t transd_calcflat( t_transd *transd, const uint8_t phase_res, const uint8_t duty_cycle );
+
+/* PUBLIC */
+
+t_transd_array * transd_array_init( /*t_transd_array *transd_array,*/ const uint8_t size_x, const uint8_t size_y, const uint8_t elem_diameter, const uint8_t elem_separation, const uint8_t phase_res ){
 	
-	uint8_t ret;
+	/*uint8_t ret;*/
 	uint8_t x,y;
-	
-	if(transd_array == NULL) {
-		#IFDEF DEBUG DEBUG_MSG("The transducer array pointer is null") #ENDIF
-		return 40;	
-	}
-	
+	t_transd_array *transd_array;
+		
 	if(size_x == 0 || size_y == 0) {
-		#IFDEF DEBUG DEBUG_MSG("Invalid size for the transducer array") #ENDIF
-		return 41;
+		#ifdef DEBUG 
+		DEBUG_MSG("Invalid size for the transducer array") 
+		#endif
+		return NULL;
 	}
 
 	if(elem_diameter == 0) {
-		#IFDEF DEBUG DEBUG_MSG("Invalid value for transducer diameter") #ENDIF
-		return 42;
+		#ifdef DEBUG 
+		DEBUG_MSG("Invalid value for transducer diameter") 
+		#endif
+		return NULL;
 	}
 	
 	if(phase_res == 0) {
-		#IFDEF DEBUG DEBUG_MSG("Invalid value for phase resolution") #ENDIF
-		return 43;
+		#ifdef DEBUG 
+		DEBUG_MSG("Invalid value for phase resolution") 
+		#endif
+		return NULL;
+	}
+	
+	transd_array = (t_transd_array*) malloc(sizeof(t_transd_array));
+	if(transd_array == NULL){
+		#ifdef DEBUG 
+		DEBUG_MSG("Memory allocation error") 
+		#endif
+		return NULL;
 	}
 	
 	transd_array->size_x = size_x;
@@ -54,26 +75,26 @@ uint8_t transd_array_init( t_transd_array *transd_array, const uint8_t size_x, c
 	transd_array->elem_diameter = elem_diameter;
 	transd_array->elem_separation = elem_separation;
 	transd_array->phase_res = phase_res;
-	
-	/* transd_array->curr_step = 0; */
-	
-	transd_array->transd_ptr = malloc(sizeof(t_transd) * size_x * size_y);
+		
+	transd_array->transd_ptr = (t_transd*) malloc(sizeof(t_transd) * size_x * size_y);
 	if(transd_array->transd_ptr == NULL){
-		#IFDEF DEBUG DEBUG_MSG("Memory allocation error") #ENDIF
-		return 1;
+		#ifdef DEBUG 
+		DEBUG_MSG("Memory allocation error") 
+		#endif
+		return NULL;
 	}
 	
 	for(x = 0; x < size_x; x++){
 		for(y = 0; y < size_y; y++){
 			
-			ret = transd_init( (transd_array->transd_ptr + x * size_y + y) /* &(transd_array->transd_ptr[x][y]) */, x, y, 0, 0, elem_diameter, elem_separation );
-			if(ret != 0) {
+			/*ret =*/ transd_init( (transd_array->transd_ptr + x * size_y + y), x, y, 0, 0, elem_diameter, elem_separation );
+			/*if(ret != 0) {
 				return ret;
-			}
+			}*/
 		}
 	}
 	
-	return 0;
+	return transd_array;
 } //transd_array_init
 
 uint8_t transd_array_set( t_transd_array *transd_array, const uint8_t index_x, const uint8_t index_y, const uint8_t port_pin, const uint8_t phase_comp ){
@@ -81,11 +102,13 @@ uint8_t transd_array_set( t_transd_array *transd_array, const uint8_t index_x, c
 	uint8_t ret;
 	
 	if(transd_array == NULL) {
-		#IFDEF DEBUG DEBUG_MSG("The transducer array pointer is null") #ENDIF
+		#ifdef DEBUG 
+		DEBUG_MSG("The transducer array pointer is null") 
+		#endif
 		return 40;	
 	}
 	
-	ret = transd_set( (transd_array->transd_ptr + x * size_y + y), port_pin, phase_comp );
+	ret = transd_set( (transd_array->transd_ptr + index_x * transd_array->size_y + index_y), port_pin, phase_comp );
 	
 	return ret;
 } //transd_array_set
@@ -96,14 +119,16 @@ uint8_t transd_array_calcfocus( t_transd_array *transd_array, const uint8_t duty
 	uint8_t x,y;
 	
 	if(transd_array == NULL) {
-		#IFDEF DEBUG DEBUG_MSG("The transducer array pointer is null") #ENDIF
+		#ifdef DEBUG 
+		DEBUG_MSG("The transducer array pointer is null") 
+		#endif
 		return 40;	
 	}
 	
-	for(x = 0; x < size_x; x++){
-		for(y = 0; y < size_y; y++){
+	for(x = 0; x < transd_array->size_x; x++){
+		for(y = 0; y < transd_array->size_y; y++){
 			
-			ret = transd_calcfocus( (transd_array->transd_ptr + x * size_y + y), transd_array->phase_res, /*transd_array->curr_step,*/ focus_x, focus_y, focus_z );
+			ret = transd_calcfocus( (transd_array->transd_ptr + x * transd_array->size_y + y), transd_array->phase_res, duty_cycle, focus_x, focus_y, focus_z );
 			if(ret != 0) {
 				return ret;
 			}
@@ -119,14 +144,16 @@ uint8_t transd_array_calcflat( t_transd_array *transd_array, const uint8_t duty_
 	uint8_t x,y;
 	
 	if(transd_array == NULL) {
-		#IFDEF DEBUG DEBUG_MSG("The transducer array pointer is null") #ENDIF
+		#ifdef DEBUG 
+		DEBUG_MSG("The transducer array pointer is null") 
+		#endif
 		return 40;	
 	}
 	
-	for(x = 0; x < size_x; x++){
-		for(y = 0; y < size_y; y++){
+	for(x = 0; x < transd_array->size_x; x++){
+		for(y = 0; y < transd_array->size_y; y++){
 			
-			ret = transd_calcflat( (transd_array->transd_ptr + x * size_y + y), transd_array->phase_res, /*transd_array->curr_step,*/ duty_cycle );
+			ret = transd_calcflat( (transd_array->transd_ptr + x * transd_array->size_y + y), transd_array->phase_res, duty_cycle );
 			if(ret != 0) {
 				return ret;
 			}
@@ -136,44 +163,59 @@ uint8_t transd_array_calcflat( t_transd_array *transd_array, const uint8_t duty_
 	return 0;
 } //transd_array_calcflat
 
-#IFDEF DEBUG
+#ifdef DEBUG
 /* Dumps the array structure to JSON */
-void transd_dumpToFile ( FILE *f,  t_transd_array *transd_array ){
+uint8_t transd_dumpToFile ( FILE *f,  t_transd_array *transd_array ){
 	
 	char buff[1024];
-	char patt[16];
+	char patt[17];
 	t_transd *transd_ptr;
 	uint8_t i,x,y;
+	uint16_t mask;
 	
-	if(f == NULL) return;
+	if(f == NULL) {
+		#ifdef DEBUG 
+		DEBUG_MSG("Unable to open file") 
+		#endif
+		return 2;
+	}
 	
-	sprintf(buff, "{\r\n\t\"size_x\": %u,\r\n\t\"size_y\": %u,\r\n\t\"elem_diameter\": %u,\r\n\t\"elem_separation\": %u,\r\n\t\"phase_res\": %u,\r\n\t\"transd_ptr\": [\r\n", transd_array->size_x, transd_array->size_y, transd_array->elem_diameter, transd_array->elem_separation, transd_array->phase_res);
+	sprintf(buff, "{\n\t\"size_x\": %u,\n\t\"size_y\": %u,\n\t\"elem_diameter\": %u,\n\t\"elem_separation\": %u,\n\t\"phase_res\": %u,\n\t\"transd_ptr\": [", transd_array->size_x, transd_array->size_y, transd_array->elem_diameter, transd_array->elem_separation, transd_array->phase_res);
 	fputs(buff, f);
 	
-	for(x = 0; x < size_x; x++){
-		for(y = 0; y < size_y; y++){
+	for(x = 0; x < transd_array->size_x; x++){
+		for(y = 0; y < transd_array->size_y; y++){
 			
-			if( x == 0 && y == 0 ) {
+			if( x != 0 || y != 0 ) {
 				fputc(',',f);
 			}
 			
-			transd_ptr = (transd_array->transd_ptr + x * size_y + y);
+			transd_ptr = (transd_array->transd_ptr + x * transd_array->size_y + y);
 			
 			for(i = 0; i < 16; i++) {
 				
-				patt[i] = transd_ptr->pattern & ((1 << (i+1)) - 1) ? '#' : '_';
+				mask = (1 << (i));
+				if(transd_ptr->pattern & mask) {
+					patt[15 - i] = '#';
+				}
+				else {
+					patt[15 - i] = '_';
+				}
 			}
+			patt[16] = '\0';
 			
-			sprintf(buff, "\t{\r\n\t\t\"port_pin\": %u,\r\n\t\t\"phase_comp\": %u,\r\n\t\t\"x\": %u,\r\n\t\t\"y\": %u,\r\n\t\t\"phase\": %u,\r\n\t\t\"duty_cycle\": %u,\r\n\t\t\"pattern\": \"%s\"\r\n\t}", transd_ptr->port_pin, transd_ptr->phase_comp, transd_ptr->x, transd_ptr->y, transd_ptr->phase, transd_ptr->duty_cycle, patt);
+			sprintf(buff, "\n\t{\n\t\t\"port_pin\": %u,\n\t\t\"phase_comp\": %u,\n\t\t\"x\": %u,\n\t\t\"y\": %u,\n\t\t\"phase\": %u,\n\t\t\"duty_cycle\": %u,\n\t\t\"pattern\": \"%s\"\n\t}", transd_ptr->port_pin, transd_ptr->phase_comp, transd_ptr->x, transd_ptr->y, transd_ptr->phase, transd_ptr->duty_cycle, patt);
 			fputs(buff, f);
 
 		}
 	}
 	
-	sprintf(buff, "\t]\r\n}\r\n", );
+	sprintf(buff, "]\n}\n");
 	fputs(buff, f);
+	
+	return 0;
 }
-#ENDIF
+#endif
 
 
 
@@ -215,7 +257,7 @@ uint16_t transd_getPattern( const uint8_t phase_res, const uint8_t phase_comp, c
 		30% -> _______###
 		50% -> _____#####
 	*/
-	bits_duty = ((duty * 100) / 255) / phase_res);
+	bits_duty = (((duty * 100) / 255) / phase_res);
 	
 	/*
 		phase -> define quanto deslocar (bits deslocados = fase / (360/resolução); 2 = 72 / 360 / 10) (se a fase for de 0 a 255, fazer bits deslocados = (fase/(255)/resolução))
@@ -243,12 +285,16 @@ uint16_t transd_getPattern( const uint8_t phase_res, const uint8_t phase_comp, c
 uint8_t transd_init( t_transd *transd, const uint8_t index_x, const uint8_t index_y, const uint8_t port_pin, const uint8_t phase_comp, const uint8_t elem_diameter, const uint8_t elem_separation ) {
 	
 	if(transd == NULL) {
-		#IFDEF DEBUG DEBUG_MSG("The transducer pointer is null") #ENDIF
+		#ifdef DEBUG 
+		DEBUG_MSG("The transducer pointer is null") 
+		#endif
 		return 44;	
 	}
 	
 	if(elem_diameter == 0) {
-		#IFDEF DEBUG DEBUG_MSG("Invalid value for transducer diameter") #ENDIF
+		#ifdef DEBUG 
+		DEBUG_MSG("Invalid value for transducer diameter") 
+		#endif
 		return 42;
 	}
 			
@@ -258,6 +304,7 @@ uint8_t transd_init( t_transd *transd, const uint8_t index_x, const uint8_t inde
 	transd->y = ((elem_diameter / 2) + (elem_diameter * index_y) + (elem_separation * index_y)); //calculates the position of the transducer on the array
 	transd->phase = 0;
 	transd->duty_cycle = 0;
+	transd->pattern = 0;
 	/* here is an example of the calculation of the position in one axys (elem_diameter = 16, elem_separation = 2)
 	 
 	  diameter           separation
@@ -271,12 +318,16 @@ uint8_t transd_init( t_transd *transd, const uint8_t index_x, const uint8_t inde
 	 0   8  16  18  26 34  36  44 52
 	 -------------------------------> 
 	 */
+	 
+	 return 0;
 } //transd_init
 
 uint8_t transd_set( t_transd *transd, uint8_t port_pin, uint8_t phase_comp ) {
 	
 	if(transd == NULL) {
-		#IFDEF DEBUG DEBUG_MSG("The transducer pointer is null") #ENDIF
+		#ifdef DEBUG 
+		DEBUG_MSG("The transducer pointer is null") 
+		#endif
 		return 44;	
 	}
 	
@@ -286,13 +337,15 @@ uint8_t transd_set( t_transd *transd, uint8_t port_pin, uint8_t phase_comp ) {
 	return 0;	
 } //transd_set
 
-uint8_t transd_calcfocus( t_transd *transd, const uint8_t phase_res, /*const uint8_t curr_step,*/ const uint8_t duty_cycle, const uint8_t focus_x, const uint8_t focus_y, const uint8_t focus_z ){
+uint8_t transd_calcfocus( t_transd *transd, const uint8_t phase_res, const uint8_t duty_cycle, const uint8_t focus_x, const uint8_t focus_y, const uint8_t focus_z ){
 	
 	uint32_t distance;
 	int8_t Dx,Dy; //may be smaller than zero
 	
 	if(transd == NULL) {
-		#IFDEF DEBUG DEBUG_MSG("The transducer pointer is null") #ENDIF
+		#ifdef DEBUG 
+		DEBUG_MSG("The transducer pointer is null") 
+		#endif
 		return 44;	
 	}
 	
@@ -316,10 +369,12 @@ uint8_t transd_calcfocus( t_transd *transd, const uint8_t phase_res, /*const uin
 	return 0;	
 } //transd_calcfocus
 
-uint8_t transd_calcflat( t_transd *transd, const uint8_t phase_res, /*const uint8_t curr_step,*/ const uint8_t duty_cycle ) {
+uint8_t transd_calcflat( t_transd *transd, const uint8_t phase_res, const uint8_t duty_cycle ) {
 	
 	if(transd == NULL) {
-		#IFDEF DEBUG DEBUG_MSG("The transducer pointer is null") #ENDIF
+		#ifdef DEBUG 
+		DEBUG_MSG("The transducer pointer is null")
+		#endif
 		return 44;	
 	}
 	
