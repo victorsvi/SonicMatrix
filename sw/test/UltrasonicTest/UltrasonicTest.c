@@ -20,10 +20,11 @@ int main (int argc, const char* argv[]) {
 	uint8_t x,y;
 	uint8_t ret = 0;
 	int phcomp = 0;
-	FILE *f = NULL;
+	FILE *json = NULL, *csv = NULL;
 	t_transd_array *transd_array = NULL;
 
-	f = fopen("UltrasonicDump.json","w");
+	json = fopen("UltrasonicDump.json","w");
+	csv = fopen("UltrasonicDump.csv","w");
 
 	transd_array = transd_array_init( MATRIX_X, MATRIX_Y, MATRIX_DIAMETER, MATRIX_SEPARATION, MATRIX_RESOLUTION );
 	if( transd_array == NULL) goto EXIT;
@@ -38,7 +39,7 @@ int main (int argc, const char* argv[]) {
             //phcomp = rand() % 255;
             phcomp = ((y+1) * 20) - ((x+1) * 5);
 			ret = transd_array_set( transd_array, x, y, (x*MATRIX_Y) + y, phcomp );
-			if( ret != 0) return ret;
+			if( ret != 0) goto EXIT;
 		}
 	}
 
@@ -47,21 +48,28 @@ int main (int argc, const char* argv[]) {
 #endif
 
     ret = transd_array_calcflat( transd_array, /*duty_cycle*/ 128 );
-    if( ret != 0) return ret;
+    if( ret != 0) goto EXIT;
 
 #if TESTLEVEL == 3
 	goto DUMP;
 #endif
 
     ret = transd_array_calcfocus( transd_array, /*duty_cycle*/ 128, /*focus_x*/ 25, /*focus_y*/ 40, /*focus_z*/ 50);
-    if( ret != 0) return ret;
+    if( ret != 0) goto EXIT;
 
 #if TESTLEVEL == 4
 	goto DUMP;
 #endif
 
 DUMP:
-	transd_dumpToFile ( f, transd_array );
+	ret = transd_dumpJSON ( json, transd_array );
+	if( ret != 0) goto EXIT;
+
+	ret = transd_dumpCSV ( csv, transd_array );
+	if( ret != 0) goto EXIT;
+
+	fclose(json);
+	fclose(csv);
 
 	return 0;
 

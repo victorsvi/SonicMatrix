@@ -3,6 +3,7 @@ ERROR CODES
 
 1	Memory allocation error
 2	Unable to open file
+3	Null pointer
 
 /* ULTRASONIC */
 
