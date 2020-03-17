@@ -12,8 +12,6 @@
 #include <stdio.h>
 #endif
 
-#define ULTRASONIC_OPTIMIZE
-
 /* represents a transducer of the array, grouping it's properties and state variables */
 typedef struct s_transd { 
 	uint8_t port_pin; //pin on which the transducer is connected.

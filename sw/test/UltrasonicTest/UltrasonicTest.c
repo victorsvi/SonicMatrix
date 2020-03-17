@@ -1,13 +1,16 @@
-
+//#define OPTIMIZE
+#define TESTLEVEL 4
 
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
 #include "../../src/Debug.h"
+
+#ifdef OPTIMIZE
+#include "../../src/Ultrasonic2.h"
+#else
 #include "../../src/Ultrasonic.h"
-
-
-#define TESTLEVEL 4
+#endif
 
 #define MATRIX_X 4U
 #define MATRIX_Y 6U
@@ -21,13 +24,24 @@ int main (int argc, const char* argv[]) {
 	uint8_t ret = 0;
 	int phcomp = 0;
 	FILE *json = NULL, *csv = NULL;
+
+#ifdef OPTIMIZE
+	t_transd transd_array2[64];
+	t_transd *transd_array = &transd_array2[0];
+#else
 	t_transd_array *transd_array = NULL;
+#endif
 
 	json = fopen("UltrasonicDump.json","w");
 	csv = fopen("UltrasonicDump.csv","w");
 
+#ifdef OPTIMIZE
+	ret = transd_array_init( transd_array );
+	if( ret != 0) goto EXIT;
+#else
 	transd_array = transd_array_init( MATRIX_X, MATRIX_Y, MATRIX_DIAMETER, MATRIX_SEPARATION, MATRIX_RESOLUTION );
 	if( transd_array == NULL) goto EXIT;
+#endif
 
 #if TESTLEVEL == 1
 	goto DUMP;
