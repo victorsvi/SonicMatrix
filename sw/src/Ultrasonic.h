@@ -12,6 +12,8 @@
 #include <stdio.h>
 #endif
 
+#define ULTRASONIC_OPTIMIZE
+
 /* represents a transducer of the array, grouping it's properties and state variables */
 typedef struct s_transd { 
 	uint8_t port_pin; //pin on which the transducer is connected.
@@ -23,6 +25,17 @@ typedef struct s_transd {
 	uint16_t pattern; //current pattern thar represents the wave format. Each bit is a step of the waveform. The number of bits is limite by the phase_res. 
 } t_transd;
 
+#ifdef ULTRASONIC_OPTIMIZE
+/* represents the array of transducers */
+typedef struct s_transd_array {
+	#define TRANSD_SIZE_X 8 //number of transducers in the x axys
+	#define TRANSD_SIZE_Y 8 //number of transducers in the y axys
+	#define TRANSD_DIAM 16 //diameter of each transducer in milimeters
+	#define TRANSD_SEPAR 2 //separation between transducers in milimeters
+	t_transd [TRANSD_SIZE_X*TRANSD_SIZE_Y]; //pointer to the transducer array
+	#define TRANSD_PHRES 10 //Number of steps that a wave period is divided. Increase the phase_res to obtain a more accurate wavefrom. Decrease the phase_res if the uC can't update the outputs fast enough to support the 40kHz frequency.
+} t_transd_array;
+#else
 /* represents the array of transducers */
 typedef struct s_transd_array {
 	uint8_t size_x; //number of transducers in the x axys
@@ -32,8 +45,13 @@ typedef struct s_transd_array {
 	t_transd *transd_ptr; //pointer to the transducer array
 	uint8_t phase_res; //Number of steps that a wave period is divided. Increase the phase_res to obtain a more accurate wavefrom. Decrease the phase_res if the uC can't update the outputs fast enough to support the 40kHz frequency.
 } t_transd_array;
+#endif
 
+#ifdef ULTRASONIC_OPTIMIZE
+t_transd_array * transd_array_init();
+#else
 t_transd_array * transd_array_init( /*t_transd_array *transd_array,*/ const uint8_t size_x, const uint8_t size_y, const uint8_t elem_diameter, const uint8_t elem_separation, const uint8_t phase_res );
+#endif
 
 uint8_t transd_array_set( t_transd_array *transd_array, const uint8_t index_x, const uint8_t index_y, const uint8_t port_pin, const uint8_t phase_comp );
 
