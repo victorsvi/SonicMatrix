@@ -33,9 +33,16 @@
 #include "Debug.h"
 #include "Ultrasonic.h"
 
+/*
 #define SOUND_SPEED 343600 //speed of the sound in the medium in milimeters per second (at 20°C dry air)
 #define SOUND_FREQ 40000  //frequency of the signal
 #define SOUND_WAVELEN 8  //(SOUND_SPEED/SOUND_FREQ) - the wave length is 8.6 mm
+#define TRANSD_SIZE_X 8 //number of transducers in the x axys
+#define TRANSD_SIZE_Y 8 //number of transducers in the y axys
+#define TRANSD_DIAM 16 //diameter of each transducer in milimeters
+#define TRANSD_SEPAR 2 //separation between transducers in milimeters
+#define TRANSD_PHRES 10 //Number of steps that a wave period is divided. Increase the phase_res to obtain a more accurate wavefrom. Decrease the phase_res if the uC can't update the outputs fast enough to support the 40kHz frequency.
+*/
 
 uint32_t transd_sqrt_int (const uint32_t x);
 uint16_t transd_getPattern( const uint8_t phase_res, const uint8_t phase, const uint8_t duty );
@@ -56,16 +63,9 @@ uint8_t transd_calcflat( t_transd *transd, const uint8_t phase_res, const uint8_
  * @param phase_res Number of steps that a wave period is divided. Increase the phase_res to obtain a more accurate wavefrom. Decrease the phase_res if the uC can't update the outputs fast enough to support the 40kHz frequency.
  * @return A pointer to the new instance of a transducer array.
  */
-#ifdef ULTRASONIC_OPTIMIZE
-t_transd_array * transd_array_init()
-#else
-t_transd_array * transd_array_init( /*t_transd_array *transd_array,*/ const uint8_t size_x, const uint8_t size_y, const uint8_t elem_diameter, const uint8_t elem_separation, const uint8_t phase_res )
-#endif
-{	
+t_transd_array * transd_array_init( /*t_transd_array *transd_array,*/ const uint8_t size_x, const uint8_t size_y, const uint8_t elem_diameter, const uint8_t elem_separation, const uint8_t phase_res ) {	
 	/*uint8_t ret; deprecated because the function now returns a pointer */
 	uint8_t x,y;
-	
-#ifndef ULTRASONIC_OPTIMIZE	
 	t_transd_array *transd_array;
 		
 	if(size_x == 0 || size_y == 0) {
