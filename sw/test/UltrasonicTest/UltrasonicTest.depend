@@ -1,0 +1,31 @@
+# depslib dependency file v1.0
+1584486009 source:e:\documentos\engenharia de computação\tcc\sonicmatrix\sw\src\ultrasonic.c
+	<stdlib.h>
+	<stdint.h>
+	"Debug.h"
+	"Ultrasonic.h"
+
+1584416219 e:\documentos\engenharia de computação\tcc\sonicmatrix\sw\src\debug.h
+
+1584578632 e:\documentos\engenharia de computação\tcc\sonicmatrix\sw\src\ultrasonic.h
+	<stdint.h>
+	<stdio.h>
+
+1584487003 source:e:\documentos\engenharia de computação\tcc\sonicmatrix\sw\test\ultrasonictest\ultrasonictest.c
+	<stdlib.h>
+	<stdint.h>
+	<stdio.h>
+	"../../src/Debug.h"
+	"../../src/Ultrasonic2.h"
+	"../../src/Ultrasonic.h"
+
+1584486792 source:e:\documentos\engenharia de computação\tcc\sonicmatrix\sw\src\ultrasonic2.c
+	<stdlib.h>
+	<stdint.h>
+	"Debug.h"
+	"Ultrasonic2.h"
+
+1584486028 e:\documentos\engenharia de computação\tcc\sonicmatrix\sw\src\ultrasonic2.h
+	<stdint.h>
+	<stdio.h>
+

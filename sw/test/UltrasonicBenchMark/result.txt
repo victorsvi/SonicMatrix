@@ -1,0 +1,3 @@
+12 bit resolution: 17507us
+10 bit resolution: 17476us
+8 bit resolution: 17412us

@@ -31,4 +31,22 @@ Ultrasonic
 	
 	rotina que calcula a fase e amplitude de cada transdutor para focar no ponto x y. Isso é salvo na matriz
 	
+	aprender como criar um timer para executar a atualização do sinal
+	
 	rotina que gera o sinal baseado no estado da matrix
+	/*
+	TODO:
+		rotina de calibração: assigment dos pinos de io para cada posição da matriz (salvar na eeprom)
+		rotina de calibração: compensação de fase (salvar na eeprom)
+		
+	
+	SCOPE:
+		array quadrado 8x8
+		recebe uma coordenada e cria um ponto focal nessa coordenada (tridimensional)
+		move o ponto focal com uma velocidade parametrizavel
+	
+	UPGRADES:
+		use potentiometer to fine tune the frequency
+		use analog joystick to move the focal point
+
+*/
