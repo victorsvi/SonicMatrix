@@ -43,6 +43,14 @@ t_array *array;
 	# Comparar a sqrt() do arduino com a de inteiro (custom), calculando a raiz de vários números e contando o tempo para a conclusão.
 */
 
+/*
+	IMPORTANTE! Calcular o foco em tempo real é muito lento (cerca de 18ms por cálculo)
+	
+	No main, usar a array_calc_focus e copiar as patterns para outro array. Esse outro array deve
+	armazenar vários "passos", de forma que o conjunto dos passos forme uma tragetória.
+	
+	O destino é informado pela serial, o arduino (que sabe a origem) vai fazer uma linha reta até o destino, colocando todos os "passos" nesse array antes de iniciar (deve demorar cerca de 180ms para 100 passos).
+*/
 
 void setup () {
 	

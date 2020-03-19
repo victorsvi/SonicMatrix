@@ -25,7 +25,9 @@ typedef struct s_transd {
 
 uint8_t transd_array_init( t_transd *transd_array );
 
-uint8_t transd_array_set(t_transd *transd_array, const uint8_t index_x, const uint8_t index_y, const uint8_t port_pin, const uint8_t phase_comp );
+uint8_t transd_array_set(  t_transd *transd_array, const uint8_t index_x, const uint8_t index_y, const uint8_t port_pin, const uint8_t phase_comp );
+
+uint8_t transd_array_set2( t_transd *transd_array, const uint8_t index_x, const uint8_t index_y, const uint8_t duty, const uint8_t phase );
 
 uint8_t transd_array_calcfocus( t_transd *transd_array, const uint8_t duty_cycle, const uint8_t focus_x, const uint8_t focus_y, const uint8_t focus_z );
 

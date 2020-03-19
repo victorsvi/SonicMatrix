@@ -7,16 +7,17 @@
 
 1584416219 e:\documentos\engenharia de computação\tcc\sonicmatrix\sw\src\debug.h
 
-1584485232 e:\documentos\engenharia de computação\tcc\sonicmatrix\sw\src\ultrasonic.h
+1584578632 e:\documentos\engenharia de computação\tcc\sonicmatrix\sw\src\ultrasonic.h
 	<stdint.h>
 	<stdio.h>
 
-1584486880 source:e:\documentos\engenharia de computação\tcc\sonicmatrix\sw\test\ultrasonictest\ultrasonictest.c
+1584487003 source:e:\documentos\engenharia de computação\tcc\sonicmatrix\sw\test\ultrasonictest\ultrasonictest.c
 	<stdlib.h>
 	<stdint.h>
 	<stdio.h>
 	"../../src/Debug.h"
 	"../../src/Ultrasonic2.h"
+	"../../src/Ultrasonic.h"
 
 1584486792 source:e:\documentos\engenharia de computação\tcc\sonicmatrix\sw\src\ultrasonic2.c
 	<stdlib.h>

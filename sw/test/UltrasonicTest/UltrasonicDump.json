@@ -10,16 +10,16 @@
 		"phase_comp": 15,
 		"x": 6,
 		"y": 6,
-		"phase": 106,
+		"phase": 99,
 		"duty_cycle": 128,
-		"pattern": "_#####____"
+		"pattern": "__#####___"
 	},
 	{
 		"port_pin": 1,
 		"phase_comp": 35,
 		"x": 6,
 		"y": 21,
-		"phase": 186,
+		"phase": 180,
 		"duty_cycle": 128,
 		"pattern": "###_____##"
 	},
@@ -28,7 +28,7 @@
 		"phase_comp": 55,
 		"x": 6,
 		"y": 36,
-		"phase": 114,
+		"phase": 108,
 		"duty_cycle": 128,
 		"pattern": "_#####____"
 	},
@@ -37,7 +37,7 @@
 		"phase_comp": 75,
 		"x": 6,
 		"y": 51,
-		"phase": 163,
+		"phase": 157,
 		"duty_cycle": 128,
 		"pattern": "####_____#"
 	},
@@ -46,7 +46,7 @@
 		"phase_comp": 95,
 		"x": 6,
 		"y": 66,
-		"phase": 71,
+		"phase": 64,
 		"duty_cycle": 128,
 		"pattern": "___#####__"
 	},
@@ -55,7 +55,7 @@
 		"phase_comp": 115,
 		"x": 6,
 		"y": 81,
-		"phase": 70,
+		"phase": 62,
 		"duty_cycle": 128,
 		"pattern": "___#####__"
 	},
@@ -64,7 +64,7 @@
 		"phase_comp": 10,
 		"x": 21,
 		"y": 6,
-		"phase": 18,
+		"phase": 11,
 		"duty_cycle": 128,
 		"pattern": "_____#####"
 	},
@@ -73,7 +73,7 @@
 		"phase_comp": 30,
 		"x": 21,
 		"y": 21,
-		"phase": 89,
+		"phase": 83,
 		"duty_cycle": 128,
 		"pattern": "__#####___"
 	},
@@ -82,7 +82,7 @@
 		"phase_comp": 50,
 		"x": 21,
 		"y": 36,
-		"phase": 11,
+		"phase": 5,
 		"duty_cycle": 128,
 		"pattern": "_____#####"
 	},
@@ -91,7 +91,7 @@
 		"phase_comp": 70,
 		"x": 21,
 		"y": 51,
-		"phase": 61,
+		"phase": 55,
 		"duty_cycle": 128,
 		"pattern": "___#####__"
 	},
@@ -100,16 +100,16 @@
 		"phase_comp": 90,
 		"x": 21,
 		"y": 66,
-		"phase": 232,
+		"phase": 226,
 		"duty_cycle": 128,
-		"pattern": "#_____####"
+		"pattern": "##_____###"
 	},
 	{
 		"port_pin": 11,
 		"phase_comp": 110,
 		"x": 21,
 		"y": 81,
-		"phase": 243,
+		"phase": 236,
 		"duty_cycle": 128,
 		"pattern": "#_____####"
 	},
@@ -118,7 +118,7 @@
 		"phase_comp": 5,
 		"x": 36,
 		"y": 6,
-		"phase": 40,
+		"phase": 33,
 		"duty_cycle": 128,
 		"pattern": "____#####_"
 	},
@@ -127,7 +127,7 @@
 		"phase_comp": 25,
 		"x": 36,
 		"y": 21,
-		"phase": 113,
+		"phase": 107,
 		"duty_cycle": 128,
 		"pattern": "_#####____"
 	},
@@ -136,7 +136,7 @@
 		"phase_comp": 45,
 		"x": 36,
 		"y": 36,
-		"phase": 36,
+		"phase": 30,
 		"duty_cycle": 128,
 		"pattern": "____#####_"
 	},
@@ -145,7 +145,7 @@
 		"phase_comp": 65,
 		"x": 36,
 		"y": 51,
-		"phase": 85,
+		"phase": 79,
 		"duty_cycle": 128,
 		"pattern": "__#####___"
 	},
@@ -154,16 +154,16 @@
 		"phase_comp": 85,
 		"x": 36,
 		"y": 66,
-		"phase": 1,
+		"phase": 250,
 		"duty_cycle": 128,
-		"pattern": "_____#####"
+		"pattern": "#_____####"
 	},
 	{
 		"port_pin": 17,
 		"phase_comp": 105,
 		"x": 36,
 		"y": 81,
-		"phase": 7,
+		"phase": 255,
 		"duty_cycle": 128,
 		"pattern": "_____#####"
 	},
@@ -172,7 +172,7 @@
 		"phase_comp": 0,
 		"x": 51,
 		"y": 6,
-		"phase": 166,
+		"phase": 159,
 		"duty_cycle": 128,
 		"pattern": "####_____#"
 	},
@@ -181,7 +181,7 @@
 		"phase_comp": 20,
 		"x": 51,
 		"y": 21,
-		"phase": 251,
+		"phase": 245,
 		"duty_cycle": 128,
 		"pattern": "#_____####"
 	},
@@ -190,34 +190,34 @@
 		"phase_comp": 40,
 		"x": 51,
 		"y": 36,
-		"phase": 182,
+		"phase": 176,
 		"duty_cycle": 128,
-		"pattern": "###_____##"
+		"pattern": "####_____#"
 	},
 	{
 		"port_pin": 21,
 		"phase_comp": 60,
 		"x": 51,
 		"y": 51,
-		"phase": 231,
+		"phase": 225,
 		"duty_cycle": 128,
-		"pattern": "#_____####"
+		"pattern": "##_____###"
 	},
 	{
 		"port_pin": 22,
 		"phase_comp": 80,
 		"x": 51,
 		"y": 66,
-		"phase": 133,
+		"phase": 126,
 		"duty_cycle": 128,
-		"pattern": "#####_____"
+		"pattern": "_#####____"
 	},
 	{
 		"port_pin": 23,
 		"phase_comp": 100,
 		"x": 51,
 		"y": 81,
-		"phase": 123,
+		"phase": 115,
 		"duty_cycle": 128,
 		"pattern": "_#####____"
 	}]
