@@ -24,7 +24,7 @@ union u_memory {
 t_array *array;
 
 //pinToBank() //converte pino para porta
-//criar um timer para gerar o sinal de 40khz. com resolução de 1/8, o timer deve ter frequência de 320kHz (3.125ns) (criar um lib para operar o timer?)
+//criar um timer para gerar o sinal de 40khz. com resolução de 1/10, o timer deve ter frequência de 400kHz (2.5us) (criar um lib para operar o timer?)
 //algum jeito de efetuar o cálculo do delay mais rápido? SIM! posso fazer, para uma coordenada z, preenher uma matriz com o delay vs distância do foco. Depois, para cada transdutor, colocar o valor relativo à distância do foco em x, y. (será que é mas rápido? irá ter que calcular a d = (dx^2 + dy^2)^1/2
 //algum jeito de atribuir as portas de forma rápida?
 //interpretar a serial de forma assíncrona? implementar de forma que a geração do sinal execute com prioridade e a interpretação da entrada seja feita "quando sobrar ciclos" (software interrupt?)
