@@ -1,4 +1,6 @@
-void setTimer () {
+#include "Timer4.h"
+
+void setTimer4 () {
 
 	/*
 		400kHz, 2.5us
@@ -25,16 +27,28 @@ void setTimer () {
 	
 	TCCR4B |= (1 << WGM12); // CTC mode
 	TCCR4B |= (1 << CS10); // 1 prescaler 
-	TIMSK4 |= (1 << OCIE1A); // enable timer compare interrupt
+	//TIMSK4 |= (1 << OCIE1A); // enable timer compare interrupt
 
 	interrupts(); // enable all interrupts
 
 }
 
-// timer compare interrupt service routine
-ISR( TIMER4_COMPA_vect ) { 
-
-  //do stuff
-
+void enableTimer4 () {
+	
+	noInterrupts(); // disable all interrupts
+	
+	TIMSK4 |= (1 << OCIE1A); // enable timer compare interrupt
+	
+	interrupts(); // enable all interrupts
+	
 }
 
+void disableTimer4 () {
+	
+	noInterrupts(); // disable all interrupts
+	
+	TIMSK4 = 0; // disable timer interrupts
+	
+	interrupts(); // enable all interrupts
+	
+}
