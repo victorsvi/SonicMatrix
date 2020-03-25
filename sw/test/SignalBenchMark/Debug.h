@@ -6,7 +6,7 @@
 	extern "C" {
 #endif
 
-#define DEBUG
+//#define DEBUG
 
 //when debbuging on Arduino
 #define DEBUG_MSG(msg) Serial.Print(msg);Serial.Print(" on ");Serial.Print(__func__);Serial.Print(":");Serial.Print(__FILE__);Serial.Print(":");Serial.Print(__LINE__);

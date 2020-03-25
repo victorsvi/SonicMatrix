@@ -40,7 +40,6 @@ uint8_t parseInput () {
 	*/
 	
 	if(Serial.available()) {
-		
 		buffSize =  Serial.readBytes(buffer,63);
 		buffer[buffSize] = '\0';
 		buffSize++;
@@ -179,7 +178,7 @@ void clearState () {
 	state.lastx = state.x; state.lasty = state.y; state.lastz = state.z;
 	
 	state.isActiveMove = 0, state.isActiveStatic = 0, state.isStop = 0, state.isFlat = 0;
-	state.x = 0, state.y = 0, state.z = 0, state.d = 0, state.s = 0;
+	//state.x = 0, state.y = 0, state.z = 0, state.d = 0, state.s = 0;
 	state.currStep = 0;
 	state.moveCurrStep = 0, state.moveNSteps = 0;
 	
@@ -197,10 +196,12 @@ void printCommand () {
 		}
 	}
 	else if(state.isActiveStatic) {
-		Serial.print("Activate at ("); Serial.print(state.x); Serial.print(","); Serial.print(state.y); Serial.print(","); Serial.print(state.z); Serial.print(") with duty cycle of "); Serial.print(state.d);
-	}
-	if(state.isFlat) {
-		Serial.print("Activate flat mode with duty cycle of "); Serial.print(state.d);
+    if(state.isFlat) {
+      Serial.print("Activate flat mode with duty cycle of "); Serial.print(state.d);
+    }
+		else {
+		  Serial.print("Activate at ("); Serial.print(state.x); Serial.print(","); Serial.print(state.y); Serial.print(","); Serial.print(state.z); Serial.print(") with duty cycle of "); Serial.print(state.d);
+		}
 	}
 	if(state.isStop) {
 		Serial.print("Deactivate");
