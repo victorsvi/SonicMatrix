@@ -37,13 +37,17 @@
 #include "Debug.h"
 #include "Timer4.h"
 
-#define TRANS_DIAMETER 16 //diameter of the element in millimeters
-#define TRANS_SEPARATION 2 //distance between two consecutive elements in the array in millimeters
+#define TRANS_DIAMETER 16 //diameter of the element in millimeters (total leght of the array cant exceed 255 millimeters)
+#define TRANS_SEPARATION 2 //distance between two consecutive elements in the array in millimeters (total leght of the array cant exceed 255 millimeters)
 #define ARRAY_SIZE_X 8 //number of transducers of the array in the x dimension
 #define ARRAY_SIZE_Y 8 //number of transducers of the array in the y dimension
-#define ARRAY_PHASERES 10 //number of transducers of the array in the y dimension
-#define TRAJ_RES 1 //trajectory resolution in millimeters
-#define TRAJ_MAXSTEPS 100 //maximum steps of the trajectory
+#define ARRAY_PHASERES 10 //number of transducers of the array in the y dimension (max 16 bits)
+#define TRAJ_RES 1 //trajectory maximum resolution in millimeters
+#define TRAJ_MAXSTEPS 255 //maximum steps of the trajectory (max 255)
+
+/* MACROS */
+
+#define MSK(b) (1 << b) //creates a mask with the bth bit high
 
 /* PROTOTYPES */
 
@@ -53,6 +57,7 @@ uint8_t parseInput ();
 void parseInputToken (char *token);
 void clearState ();
 void printCommand ();
+void calcStep (uint8_t step_idx, const uint8_t duty_cycle, const uint8_t focus_x, const uint8_t focus_y, const uint8_t focus_z );
 
 /* DATA DEFINITION */
 struct s_state {
@@ -65,7 +70,7 @@ struct s_state {
 
 struct s_pin {
 	volatile uint8_t *bank_ptr;
-	uint8_t bit_idx;
+	uint8_t bit_msk;
 };
 
 /* GLOBAL VARIABLES */
@@ -76,90 +81,92 @@ const uint8_t ARRAY_CALIBRATION[ARRAY_SIZE_X][ARRAY_SIZE_Y][2] = {
 	0, 0 //x0, y1
 };
 
+/* Port bank and bit mask for each pin indexed by pin number */
 const struct s_pin PINS[70] = {
-	{&PORTE, 0},
-	{&PORTE, 1},
-	{&PORTE, 4},
-	{&PORTE, 5},
-	{&PORTG, 5},
-	{&PORTE, 3},
-	{&PORTH, 3},
-	{&PORTH, 4},
-	{&PORTH, 5},
-	{&PORTH, 6},
-	{&PORTB, 4},
-	{&PORTB, 5},
-	{&PORTB, 6},
-	{&PORTB, 7},
-	{&PORTJ, 1},
-	{&PORTJ, 0},
-	{&PORTH, 1},
-	{&PORTH, 0},
-	{&PORTD, 3},
-	{&PORTD, 2},
-	{&PORTD, 1},
-	{&PORTD, 0},
-	{&PORTA, 0},
-	{&PORTA, 1},
-	{&PORTA, 2},
-	{&PORTA, 3},
-	{&PORTA, 4},
-	{&PORTA, 5},
-	{&PORTA, 6},
-	{&PORTA, 7},
-	{&PORTC, 7},
-	{&PORTC, 6},
-	{&PORTC, 5},
-	{&PORTC, 4},
-	{&PORTC, 3},
-	{&PORTC, 2},
-	{&PORTC, 1},
-	{&PORTC, 0},
-	{&PORTD, 7},
-	{&PORTG, 2},
-	{&PORTG, 1},
-	{&PORTG, 0},
-	{&PORTL, 7},
-	{&PORTL, 6},
-	{&PORTL, 5},
-	{&PORTL, 4},
-	{&PORTL, 3},
-	{&PORTL, 2},
-	{&PORTL, 1},
-	{&PORTL, 0},
-	{&PORTB, 3},
-	{&PORTB, 2},
-	{&PORTB, 1},
-	{&PORTB, 0},
-	{&PORTF, 0},
-	{&PORTF, 1},
-	{&PORTF, 2},
-	{&PORTF, 3},
-	{&PORTF, 4},
-	{&PORTF, 5},
-	{&PORTF, 6},
-	{&PORTF, 7},
-	{&PORTK, 0},
-	{&PORTK, 1},
-	{&PORTK, 2},
-	{&PORTK, 3},
-	{&PORTK, 4},
-	{&PORTK, 5},
-	{&PORTK, 6},
-	{&PORTK, 7}
+	{&PORTE, MSK(0)},
+	{&PORTE, MSK(1)},
+	{&PORTE, MSK(4)},
+	{&PORTE, MSK(5)},
+	{&PORTG, MSK(5)},
+	{&PORTE, MSK(3)},
+	{&PORTH, MSK(3)},
+	{&PORTH, MSK(4)},
+	{&PORTH, MSK(5)},
+	{&PORTH, MSK(6)},
+	{&PORTB, MSK(4)},
+	{&PORTB, MSK(5)},
+	{&PORTB, MSK(6)},
+	{&PORTB, MSK(7)},
+	{&PORTJ, MSK(1)},
+	{&PORTJ, MSK(0)},
+	{&PORTH, MSK(1)},
+	{&PORTH, MSK(0)},
+	{&PORTD, MSK(3)},
+	{&PORTD, MSK(2)},
+	{&PORTD, MSK(1)},
+	{&PORTD, MSK(0)},
+	{&PORTA, MSK(0)},
+	{&PORTA, MSK(1)},
+	{&PORTA, MSK(2)},
+	{&PORTA, MSK(3)},
+	{&PORTA, MSK(4)},
+	{&PORTA, MSK(5)},
+	{&PORTA, MSK(6)},
+	{&PORTA, MSK(7)},
+	{&PORTC, MSK(7)},
+	{&PORTC, MSK(6)},
+	{&PORTC, MSK(5)},
+	{&PORTC, MSK(4)},
+	{&PORTC, MSK(3)},
+	{&PORTC, MSK(2)},
+	{&PORTC, MSK(1)},
+	{&PORTC, MSK(0)},
+	{&PORTD, MSK(7)},
+	{&PORTG, MSK(2)},
+	{&PORTG, MSK(1)},
+	{&PORTG, MSK(0)},
+	{&PORTL, MSK(7)},
+	{&PORTL, MSK(6)},
+	{&PORTL, MSK(5)},
+	{&PORTL, MSK(4)},
+	{&PORTL, MSK(3)},
+	{&PORTL, MSK(2)},
+	{&PORTL, MSK(1)},
+	{&PORTL, MSK(0)},
+	{&PORTB, MSK(3)},
+	{&PORTB, MSK(2)},
+	{&PORTB, MSK(1)},
+	{&PORTB, MSK(0)},
+	{&PORTF, MSK(0)},
+	{&PORTF, MSK(1)},
+	{&PORTF, MSK(2)},
+	{&PORTF, MSK(3)},
+	{&PORTF, MSK(4)},
+	{&PORTF, MSK(5)},
+	{&PORTF, MSK(6)},
+	{&PORTF, MSK(7)},
+	{&PORTK, MSK(0)},
+	{&PORTK, MSK(1)},
+	{&PORTK, MSK(2)},
+	{&PORTK, MSK(3)},
+	{&PORTK, MSK(4)},
+	{&PORTK, MSK(5)},
+	{&PORTK, MSK(6)},
+	{&PORTK, MSK(7)}
 };
 
 struct s_state state;
 
 t_transd_array *transd_array = NULL;
 
-uint8_t traj_steps[TRAJ_MAXSTEPS][ARRAY_SIZE_X][ARRAY_SIZE_Y];
-//uint8_t traj_steps[TRAJ_MAXSTEPS][ARRAY_PHASERES][10];
+//uint8_t traj_steps[TRAJ_MAXSTEPS][ARRAY_SIZE_X][ARRAY_SIZE_Y];
+uint8_t outPortBuffer[TRAJ_MAXSTEPS][ARRAY_PHASERES][10]; //buffers the ports state for each coordinate (x,y,z) of the movement, for each slice of the wave period, for each PORT
 
 void setup () {
 	
 	Serial.begin(115200);
 	
+	//set ports as output (bit high = output)
 	DDRA = 0xFF;
 	DDRB = 0xFF;
 	DDRC = 0xFF;
@@ -191,44 +198,82 @@ void loop () {
 }
 
 ISR( TIMER4_COMPA_vect ) {
-	
-	uint8_t x, y, bit, pin;
 		
-	PORTA = 0;
-	PORTB = 0;
-	PORTC = 0;
-	PORTD = 0;
-	//PORTE = 0;
-	PORTF = 0;
-	PORTG = 0;
-	PORTH = 0;
-	//PORTI = 0;
-	PORTJ = 0;
-	PORTK = 0;
-	PORTL = 0;
-	
 	//if(state.isActiveStatic && !state.isActiveMove) {
 			
+		// Just copy the port state from the buffer
+		PORTA = outPortBuffer[step_idx][phaseStep][0];
+		PORTB = outPortBuffer[step_idx][phaseStep][1];
+		PORTC = outPortBuffer[step_idx][phaseStep][2];
+		PORTD = outPortBuffer[step_idx][phaseStep][3];
+		//PORTE = 0;
+		PORTF = outPortBuffer[step_idx][phaseStep][4];
+		PORTG = outPortBuffer[step_idx][phaseStep][5];
+		PORTH = outPortBuffer[step_idx][phaseStep][6];
+		//PORTI = 0;
+		PORTJ = outPortBuffer[step_idx][phaseStep][7];
+		PORTK = outPortBuffer[step_idx][phaseStep][8];
+		PORTL = outPortBuffer[step_idx][phaseStep][9];
 		
-		for(x = 0; x < ARRAY_SIZE_X; x++){
-			for(y = 0; y < ARRAY_SIZE_Y; y++){
-				
-				//access the pattern and gets the value for the bit representing the current step
-				bit = (transd_array->transd_ptr + x * ARRAY_SIZE_Y + y)->pattern & (1 << state.currStep);
-				//gets the pin that the transducer is connected to
-				pin = (transd_array->transd_ptr + x * ARRAY_SIZE_Y + y)->port_pin;
-				
-				//updates only the current pin
-				//the bank and bit of each pin is available on the PINS constant indexed by pin number
-				*(PINS[pin].bank_ptr) |= bit << *(PINS[pin].bank_ptr);
-							
-			}
-		}
-		
-		state.currStep < ARRAY_PHASERES ? state.currStep = 0 : state.currStep++;
+		state.currStep < ARRAY_PHASERES ? state.currStep++ : state.currStep = 0;
 	//}
 	
 }
+
+void calcStep (uint8_t step_idx, const uint8_t duty_cycle, const uint8_t focus_x, const uint8_t focus_y, const uint8_t focus_z ) {
+	
+	uint8_t x, y, phaseStep, bit, pin, portIdx;
+	
+	for(phaseStep = 0; phaseStep < ARRAY_PHASERES; phaseStep++){
+		outPortBuffer[step_idx][phaseStep][0] = 0x00; //PORTA
+		outPortBuffer[step_idx][phaseStep][1] = 0x00; //PORTB
+		outPortBuffer[step_idx][phaseStep][2] = 0x00; //PORTC
+		outPortBuffer[step_idx][phaseStep][3] = 0x00; //PORTD
+		outPortBuffer[step_idx][phaseStep][4] = 0x00; //PORTF
+		outPortBuffer[step_idx][phaseStep][5] = 0x00; //PORTG
+		outPortBuffer[step_idx][phaseStep][6] = 0x00; //PORTH
+		outPortBuffer[step_idx][phaseStep][7] = 0x00; //PORTJ
+		outPortBuffer[step_idx][phaseStep][8] = 0x00; //PORTK
+		outPortBuffer[step_idx][phaseStep][9] = 0x00; //PORTL
+	}
+	
+	transd_array_calcfocus( transd_array, duty_cycle, focus_x, focus_y, focus_z );
+	
+	for(x = 0; x < ARRAY_SIZE_X; x++){
+		for(y = 0; y < ARRAY_SIZE_Y; y++){
+			
+			//gets the pin that the transducer is connected to
+			pin = (transd_array->transd_ptr + x * ARRAY_SIZE_Y + y)->port_pin;
+			
+			if(PINS[pin].bank_ptr == &PORTA) portIdx = 0;
+			if(PINS[pin].bank_ptr == &PORTB) portIdx = 1;
+			if(PINS[pin].bank_ptr == &PORTC) portIdx = 2;
+			if(PINS[pin].bank_ptr == &PORTD) portIdx = 3;
+			if(PINS[pin].bank_ptr == &PORTF) portIdx = 4;
+			if(PINS[pin].bank_ptr == &PORTG) portIdx = 5;
+			if(PINS[pin].bank_ptr == &PORTH) portIdx = 6;
+			if(PINS[pin].bank_ptr == &PORTJ) portIdx = 7;
+			if(PINS[pin].bank_ptr == &PORTK) portIdx = 8;
+			if(PINS[pin].bank_ptr == &PORTL) portIdx = 9;
+			
+			for(phaseStep = 0; phaseStep < ARRAY_PHASERES; phaseStep++){
+			
+				//access the pattern and gets the value for the bit representing the current step
+				bit = (transd_array->transd_ptr + x * ARRAY_SIZE_Y + y)->pattern & (1 << phaseStep);
+				
+				//updates only the current pin
+				if(bit) {
+					outPortBuffer[step_idx][phaseStep][portIdx] |= PINS[pin].bit_msk;
+				}
+				/* no need to set as low because all the bits of the buffer are set to zero
+				else {
+					outPortBuffer[step_idx][phaseStep][portIdx] &= ~PINS[pin].bit_idx;
+				}
+				*/
+			}
+		}
+	}
+} //calcStep
 
 uint8_t parseInput () {
 	
@@ -260,61 +305,8 @@ uint8_t parseInput () {
 	}
 	
 	return 0;
-	
-		/*
-		start = 0; end = start; 
-		while( buffer[start + end] != ' ' && buffer[start + end] != '\0' ) {
-			end++;
-		}
-		buffer[start + end] = '\0';
-		focusTarget.x = atoi(&buffer[start]);
 		
-		if( start + end < buffSize ) {
-			start += end + 1; end = 0;
-			while( buffer[start + end] != ' ' && buffer[start + end] != '\0' ) {
-				end++;
-			}
-			buffer[start + end] = '\0';
-			focusTarget.y = atoi(&buffer[start]);
-		}
-		
-		if( start + end < buffSize ) {
-			start += end + 1; end = 0;
-			while( buffer[start + end] != ' ' && buffer[start + end] != '\0' ) {
-				end++;
-			}
-			buffer[start + end] = '\0';
-			focusTarget.z = atoi(&buffer[start]);
-		}
-		*/
-		/*
-		buffPtr = &buffer; n = 0; 
-		while( *(buffPtr + n) != ' ' && *(buffPtr + n) != '\0' ) {
-			n++;
-		}
-		*(buffPtr + n) = '\0';
-		focusTarget.x = atoi(buffPtr);
-		
-		buffPtr = (buffPtr + ++n); n = 0; 
-		if( buffPtr - &buffer < buffSize ) {
-			while( *(buffPtr + n) != ' ' && *(buffPtr + n) != '\0' ) {
-				n++;
-			}
-			*(buffPtr + n) = '\0';
-			focusTarget.y = atoi(buffPtr);
-		}
-		
-		buffPtr = (buffPtr + ++n); n = 0; 
-		if( buffPtr - &buffer < buffSize ) {
-			while( *(buffPtr + n) != ' ' && *(buffPtr + n) != '\0' ) {
-				n++;
-			}
-			*(buffPtr + n) = '\0';
-			focusTarget.z = atoi(buffPtr);
-		}
-		*/
-	
-}
+} //parseInput
 
 /*
 
@@ -372,7 +364,7 @@ void parseInputToken (char *token) {
 			state.s = atoi(&token[1]);
 			break;
 	}
-}
+} //parseInputToken
 
 void clearState () {
 	
@@ -383,7 +375,7 @@ void clearState () {
 	state.currStep = 0;
 	state.moveCurrStep = 0, state.moveNSteps = 0;
 	
-}
+} //clearState
 
 void printCommand () {
 	
@@ -412,7 +404,7 @@ void printCommand () {
 	}
 	Serial.print("\n");
 	
-}
+} //printCommand
 
 void trand_array_load ( t_transd_array *transd_array ){
 	
@@ -424,7 +416,7 @@ void trand_array_load ( t_transd_array *transd_array ){
 			transd_array_set( transd_array, x, y, ARRAY_CALIBRATION[x][y][0], ARRAY_CALIBRATION[x][y][1] );
 		}
 	}
-}
+} /trand_array_load
 
 
 
