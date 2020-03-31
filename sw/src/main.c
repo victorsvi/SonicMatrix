@@ -29,16 +29,14 @@
 */
 
 
-//#include <stdlib.h>
 #include <stdint.h>
-//#include <EEPROM.h>
 #include <Arduino.h>
 #include "Ultrasonic.h"
 #include "Debug.h"
 #include "Timer4.h"
 
-#define TRANS_DIAMETER 16 //diameter of the element in millimeters (total leght of the array cant exceed 255 millimeters)
-#define TRANS_SEPARATION 2 //distance between two consecutive elements in the array in millimeters (total leght of the array cant exceed 255 millimeters)
+#define TRANS_DIAMETER 16 //diameter of the element in millimeters (total length of the array cant exceed 255 millimeters)
+#define TRANS_SEPARATION 2 //distance between two consecutive elements in the array in millimeters (total length of the array cant exceed 255 millimeters)
 #define ARRAY_SIZE_X 8 //number of transducers of the array in the x dimension
 #define ARRAY_SIZE_Y 8 //number of transducers of the array in the y dimension
 #define ARRAY_PHASERES 10 //number of transducers of the array in the y dimension (max 16 bits)
@@ -51,55 +49,32 @@
 
 /* PROTOTYPES */
 
-void trand_array_load ( t_transd_array *transd_array );
 ISR( TIMER4_COMPA_vect );
-uint8_t parseInput ();
-void parseInputToken (char *token);
-void clearState ();
-void printCommand ();
-void calcStep (uint8_t step_idx, const uint8_t duty_cycle, const uint8_t focus_x, const uint8_t focus_y, const uint8_t focus_z );
+
+void traj_calc_step (uint8_t step_idx, const uint8_t duty_cycle, const uint8_t focus_x, const uint8_t focus_y, const uint8_t focus_z );
+uint8_t traj_solve_y (uint8_t x, uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2 );
+
+
+uint8_t input_parse ();
+void input_parse_token (char *token);
+void input_execute ();
+void input_print ();
+
+void transd_array_load ( t_transd_array *transd_array );
 
 /* DATA DEFINITION */
-struct s_state {
-	uint8_t isActiveMove = 0, isActiveStatic = 0, isStop = 0, isFlat = 0;
-	uint8_t x = 0, y = 0, z = 0, d = 0, s = 0;
-	uint8_t currStep = 0;
-	uint8_t moveCurrStep = 0, moveNSteps = 0;
-	uint8_t lastx = 0, lasty = 0, lastz = 0;
+
+enum e_mode = {	MODE_OFF,		// turned off, signal is held low
+				MODE_ON, 		// turned on, with static focal point
+				MODE_MOVE_OFF, 	// move to focal point to target then tuns off
+				MODE_MOVE_ON, 	// move to focal point to target and keeps on
+				MODE_FLAT		// turned on, flat mode, all transducers in phase
 };
 
-{
-	if(isActiveMove || isActiveStatic) {
-		//state.lastx = state.x;
-		//state.lasty = state.y;
-		//state.lastz = state.z;
-		
-		moveCurrStep = 0;
-		moveNSteps = 0;
-		
-		//calculate output buffer
-		if(isActiveMove) { //movo to
-			
-		}
-		else if (!isFlat) { //focus static
-			
-		}
-		else { //flat
-			
-			transd_array_calcflat( transd_array, state.d );
-
-		}
-		
-		enableTimer4 ();
-		
-	}
-	
-	if(isStop) {
-		
-		disableTimer4 ();
-		
-	}
-}
+struct s_traj_ctrl {
+	uint8_t x = 0, y = 0, z = 0, d = 0, s = 0;
+	uint8_t lastx = 0, lasty = 0, lastz = 0;
+};
 
 struct s_pin {
 	volatile uint8_t *bank_ptr;
@@ -250,12 +225,14 @@ const struct s_pin PINS[70] = {
 	{&PORTK, MSK(7)}
 };
 
-struct s_state state;
+struct s_traj_ctrl traj_ctrl;
+volatile uint8_t traj_step_idx = 0, traj_step_num = 0;
+volatile uint8_t array_phase_idx = 0;
+enum e_mode mode;
 
 t_transd_array *transd_array = NULL;
 
-//uint8_t traj_steps[TRAJ_MAXSTEPS][ARRAY_SIZE_X][ARRAY_SIZE_Y];
-uint8_t outPortBuffer[TRAJ_MAXSTEPS][ARRAY_PHASERES][10]; //buffers the ports state for each coordinate (x,y,z) of the movement, for each slice of the wave period, for each PORT
+uint8_t traj_port_buffer[TRAJ_MAXSTEPS][ARRAY_PHASERES][10]; //buffers the ports state for each coordinate (x,y,z) of the movement, for each slice of the wave period, for each PORT
 
 void setup () {
 	
@@ -285,54 +262,72 @@ void setup () {
 	}
 	trand_array_load (transd_array);
 	
-}
+	mode = MODE_OFF;
+} //setup
+
 
 void loop () {
 	
-	
-}
-
-ISR( TIMER4_COMPA_vect ) {
-		
-	//if(state.isActiveStatic && !state.isActiveMove) {
-			
-		// Just copy the port state from the buffer
-		PORTA = outPortBuffer[step_idx][phaseStep][0];
-		PORTB = outPortBuffer[step_idx][phaseStep][1];
-		PORTC = outPortBuffer[step_idx][phaseStep][2];
-		PORTD = outPortBuffer[step_idx][phaseStep][3];
-		//PORTE = 0;
-		PORTF = outPortBuffer[step_idx][phaseStep][4];
-		PORTG = outPortBuffer[step_idx][phaseStep][5];
-		PORTH = outPortBuffer[step_idx][phaseStep][6];
-		//PORTI = 0;
-		PORTJ = outPortBuffer[step_idx][phaseStep][7];
-		PORTK = outPortBuffer[step_idx][phaseStep][8];
-		PORTL = outPortBuffer[step_idx][phaseStep][9];
-		
-		state.currStep < ARRAY_PHASERES ? state.currStep++ : state.currStep = 0;
-	//}
-	
-}
-
-void calcStep (uint8_t step_idx, const uint8_t duty_cycle, const uint8_t focus_x, const uint8_t focus_y, const uint8_t focus_z ) {
-	
-	uint8_t x, y, phaseStep, bit, pin, portIdx;
-	
-	for(phaseStep = 0; phaseStep < ARRAY_PHASERES; phaseStep++){
-		outPortBuffer[step_idx][phaseStep][0] = 0x00; //PORTA
-		outPortBuffer[step_idx][phaseStep][1] = 0x00; //PORTB
-		outPortBuffer[step_idx][phaseStep][2] = 0x00; //PORTC
-		outPortBuffer[step_idx][phaseStep][3] = 0x00; //PORTD
-		outPortBuffer[step_idx][phaseStep][4] = 0x00; //PORTF
-		outPortBuffer[step_idx][phaseStep][5] = 0x00; //PORTG
-		outPortBuffer[step_idx][phaseStep][6] = 0x00; //PORTH
-		outPortBuffer[step_idx][phaseStep][7] = 0x00; //PORTJ
-		outPortBuffer[step_idx][phaseStep][8] = 0x00; //PORTK
-		outPortBuffer[step_idx][phaseStep][9] = 0x00; //PORTL
+	if(input_parse()) {
+		input_print();
+		input_execute();
 	}
 	
-	transd_array_calcfocus( transd_array, duty_cycle, focus_x, focus_y, focus_z );
+} //loop
+
+/*
+
+*/
+ISR( TIMER4_COMPA_vect ) {
+
+	uint8_t phase_idx = array_phase_idx;
+	uint8_t step_idx = traj_step_idx;
+	
+	// Just copy the port state from the buffer
+	PORTA = traj_port_buffer[step_idx][array_phase][0];
+	PORTB = traj_port_buffer[step_idx][array_phase][1];
+	PORTC = traj_port_buffer[step_idx][array_phase][2];
+	PORTD = traj_port_buffer[step_idx][array_phase][3];
+	//PORTE = 0;
+	PORTF = traj_port_buffer[step_idx][array_phase][4];
+	PORTG = traj_port_buffer[step_idx][array_phase][5];
+	PORTH = traj_port_buffer[step_idx][array_phase][6];
+	//PORTI = 0;
+	PORTJ = traj_port_buffer[step_idx][array_phase][7];
+	PORTK = traj_port_buffer[step_idx][array_phase][8];
+	PORTL = traj_port_buffer[step_idx][array_phase][9];
+	
+	phase_idx < ARRAY_PHASERES ? array_phase_idx++ : array_phase_idx = 0;
+
+} //ISR T4
+
+/*
+
+*/
+void traj_calc_step (uint8_t step_idx, const uint8_t duty_cycle, const uint8_t focus_x, const uint8_t focus_y, const uint8_t focus_z ) {
+	
+	uint8_t x, y, phase_idx, bit, pin, port_idx;
+	
+	for(phase_idx = 0; phase_idx < ARRAY_PHASERES; phase_idx++){
+		traj_port_buffer[step_idx][phase_idx][0] = 0x00; //PORTA
+		traj_port_buffer[step_idx][phase_idx][1] = 0x00; //PORTB
+		traj_port_buffer[step_idx][phase_idx][2] = 0x00; //PORTC
+		traj_port_buffer[step_idx][phase_idx][3] = 0x00; //PORTD
+		traj_port_buffer[step_idx][phase_idx][4] = 0x00; //PORTF
+		traj_port_buffer[step_idx][phase_idx][5] = 0x00; //PORTG
+		traj_port_buffer[step_idx][phase_idx][6] = 0x00; //PORTH
+		traj_port_buffer[step_idx][phase_idx][7] = 0x00; //PORTJ
+		traj_port_buffer[step_idx][phase_idx][8] = 0x00; //PORTK
+		traj_port_buffer[step_idx][phase_idx][9] = 0x00; //PORTL
+	}
+	
+	if(mode != MODE_FLAT) {
+		transd_array_calcfocus( transd_array, duty_cycle, focus_x, focus_y, focus_z );
+	}
+	else {
+		transd_array_calcflat( transd_array, duty_cycle );
+	}
+	
 	
 	for(x = 0; x < ARRAY_SIZE_X; x++){
 		for(y = 0; y < ARRAY_SIZE_Y; y++){
@@ -340,40 +335,43 @@ void calcStep (uint8_t step_idx, const uint8_t duty_cycle, const uint8_t focus_x
 			//gets the pin that the transducer is connected to
 			pin = (transd_array->transd_ptr + x * ARRAY_SIZE_Y + y)->port_pin;
 			
-			if(PINS[pin].bank_ptr == &PORTA) portIdx = 0;
-			if(PINS[pin].bank_ptr == &PORTB) portIdx = 1;
-			if(PINS[pin].bank_ptr == &PORTC) portIdx = 2;
-			if(PINS[pin].bank_ptr == &PORTD) portIdx = 3;
-			if(PINS[pin].bank_ptr == &PORTF) portIdx = 4;
-			if(PINS[pin].bank_ptr == &PORTG) portIdx = 5;
-			if(PINS[pin].bank_ptr == &PORTH) portIdx = 6;
-			if(PINS[pin].bank_ptr == &PORTJ) portIdx = 7;
-			if(PINS[pin].bank_ptr == &PORTK) portIdx = 8;
-			if(PINS[pin].bank_ptr == &PORTL) portIdx = 9;
+			if(PINS[pin].bank_ptr == &PORTA) port_idx = 0;
+			if(PINS[pin].bank_ptr == &PORTB) port_idx = 1;
+			if(PINS[pin].bank_ptr == &PORTC) port_idx = 2;
+			if(PINS[pin].bank_ptr == &PORTD) port_idx = 3;
+			if(PINS[pin].bank_ptr == &PORTF) port_idx = 4;
+			if(PINS[pin].bank_ptr == &PORTG) port_idx = 5;
+			if(PINS[pin].bank_ptr == &PORTH) port_idx = 6;
+			if(PINS[pin].bank_ptr == &PORTJ) port_idx = 7;
+			if(PINS[pin].bank_ptr == &PORTK) port_idx = 8;
+			if(PINS[pin].bank_ptr == &PORTL) port_idx = 9;
 			
-			for(phaseStep = 0; phaseStep < ARRAY_PHASERES; phaseStep++){
+			for(phase_idx = 0; phase_idx < ARRAY_PHASERES; phase_idx++){
 			
 				//access the pattern and gets the value for the bit representing the current step
-				bit = (transd_array->transd_ptr + x * ARRAY_SIZE_Y + y)->pattern & (1 << phaseStep);
+				bit = (transd_array->transd_ptr + x * ARRAY_SIZE_Y + y)->pattern & (1 << phase_idx);
 				
 				//updates only the current pin
 				if(bit) {
-					outPortBuffer[step_idx][phaseStep][portIdx] |= PINS[pin].bit_msk;
+					traj_port_buffer[step_idx][phase_idx][port_idx] |= PINS[pin].bit_msk;
 				}
 				/* no need to set as low because all the bits of the buffer are set to zero
 				else {
-					outPortBuffer[step_idx][phaseStep][portIdx] &= ~PINS[pin].bit_idx;
+					traj_port_buffer[step_idx][phase_idx][port_idx] &= ~PINS[pin].bit_idx;
 				}
 				*/
 			}
 		}
 	}
-} //calcStep
+} //traj_calc_step
 
-uint8_t parseInput () {
+/*
+
+*/
+uint8_t input_parse () {
 	
 	char buffer[64];
-	uint8_t buffSize, start, end;
+	uint8_t buffer_size, start_idx, end_idx;
 	/*
 	char *buffPtr;
 	uint8_t n;
@@ -381,19 +379,19 @@ uint8_t parseInput () {
 	
 	if(Serial.available()) {
 		
-		buffSize =  Serial.readBytes(buffer,63);
-		buffer[buffSize] = '\0';
-		buffSize++;
+		buffer_size =  Serial.readBytes(buffer,63);
+		buffer[buffer_size] = '\0';
+		buffer_size++;
 		
-		start = end = 0;
-		while (start < buffSize) {
+		start_idx = end_idx = 0;
+		while (start_idx < buffer_size) {
 						
-			while( buffer[start + end] != ' ' && buffer[start + end] != '\0' ) {
-				end++;
+			while( buffer[start_idx + end_idx] != ' ' && buffer[start_idx + end_idx] != '\0' ) {
+				end_idx++;
 			}
-			buffer[start + end] = '\0';
-			parseInputToken(&buffer[start]);
-			start += end + 1; end = 0;
+			buffer[start_idx + end_idx] = '\0';
+			input_parse_token(&buffer[start_idx]);
+			start_idx += end_idx + 1; end_idx = 0;
 		}
 		
 		return 1;
@@ -401,12 +399,50 @@ uint8_t parseInput () {
 	
 	return 0;
 		
-} //parseInput
+} //input_parse
 
 /*
 
 */
-void parseInputToken (char *token) {
+uint8_t traj_solve_y (uint8_t x, uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2 ) {
+	
+	int32_t _x, _y, _x1, _y1, _x2, _y2;
+	uint8_t y;
+	
+	//using 2 decimal places fixed point (force cast before multiplication)
+	 _x = int32_t( x) * 100; 
+	_x1 = int32_t(x1) * 100; 
+	_y1 = int32_t(y1) * 100; 
+	_x2 = int32_t(x2) * 100; 
+	_y2 = int32_t(y2) * 100;
+	
+	/*
+		Find a coordinate of a line trough two points
+		
+		from geometric analysis, the slope m for the line that pass trough the points (x1,y1) and (x2,y2) is m = (y2 - y1)/(x2 - x1) (1)
+		the same equation can be reorganized to find (x3, y3) given (x1,y1), x3 and m: y3 = m * (x3 - x1) + y1 (2)
+		replacing m from (1) in (2) gives y3 = (y2 - y1)/(x2 - x1) * (x3 - x1) + y1 (3)
+		the equation bellow is (3) reorganized to decrease the rounding error in the division (we are using integers)
+	*/
+	_y = ((_y2 - _y1) * (_x - _x1))/(_x2 - _x1) + _y1;
+	
+	//round for 2 decimal places
+	if(_y % 100 >= 50) {
+		_y += 50;
+	}
+	
+	//using 2 decimal places fixed point
+	_y /= 100;
+	
+	//the point will always be at the first quadrant (x >= 0 and y >= 0)
+	y = uint8_t(_y);
+	
+} //traj_solve_y
+
+/*
+
+*/
+void input_parse_token (char *token) {
 	
 	if(token == NULL) return;
 	if(token[0] == '\0') return;
@@ -427,81 +463,149 @@ void parseInputToken (char *token) {
 	*/
 	switch (token[0]) {
 		case 'i':
-			state.isStop = 1;
+			mode = MODE_OFF;
 			break;
 		case 'a':
-			state.isActiveStatic = 1;
+			mode = MODE_ON;
 			break;
 		case 'f':
-			state.isActiveStatic = 1;
-			state.isFlat = 1;
+			mode = MODE_FLAT;
 			break;
 		case 'm':
-			state.isActiveMove = 1;
+			mode = MODE_MOVE_OFF;
 			break;
 		case 'r':
-			state.isActiveStatic = 1;
-			state.isActiveMove = 1;
+			mode = MODE_MOVE_ON;
 			break;
 		case 'x':
-			state.x = atoi(&token[1]);
+			traj_ctrl.x = atoi(&token[1]);
 			break;
 		case 'y':
-			state.y = atoi(&token[1]);
+			traj_ctrl.y = atoi(&token[1]);
 			break;
 		case 'z':
-			state.z = atoi(&token[1]);
+			traj_ctrl.z = atoi(&token[1]);
 			break;
 		case 'd':
-			state.d = atoi(&token[1]);
+			traj_ctrl.d = atoi(&token[1]);
 			break;
 		case 's':
-			state.s = atoi(&token[1]);
+			traj_ctrl.s = atoi(&token[1]);
 			break;
 	}
-} //parseInputToken
+} //input_parse_token
 
-void clearState () {
-	
-	state.lastx = state.x; state.lasty = state.y; state.lastz = state.z;
-	
-	state.isActiveMove = 0, state.isActiveStatic = 0, state.isStop = 0, state.isFlat = 0;
-	//state.x = 0, state.y = 0, state.z = 0, state.d = 0, state.s = 0;
-	state.currStep = 0;
-	state.moveCurrStep = 0, state.moveNSteps = 0;
-	
-} //clearState
+/*
 
-void printCommand () {
+*/
+void input_execute (){
 	
-	if(state.isActiveMove){
-		Serial.print("Move from ("); Serial.print(state.lastx); Serial.print(","); Serial.print(state.lasty); Serial.print(","); Serial.print(state.lastz); Serial.print(") to ("); Serial.print(state.x); Serial.print(","); Serial.print(state.y); Serial.print(","); Serial.print(state.z); Serial.print(") at "); Serial.print(state.s); Serial.print("mm/s with duty cycle of "); Serial.print(state.d);
-		if(state.isActiveStatic) {
+	uint8_t traj_x, traj_y, step_idx;
+	
+	if(mode == MODE_MOVE_OFF || mode == MODE_MOVE_ON){
+		
+		step_idx = 0;
+		traj_x = traj_ctrl.lastx;
+		
+		if(traj_x <= traj_ctrl.x) {
+			for(; traj_x <= traj_ctrl.x; traj_x += TRAJ_RES) {
+				
+				traj_y = traj_solve_y (traj_x, traj_ctrl.x, traj_ctrl.y, traj_ctrl.lastx, traj_ctrl.lasty );
+				traj_calc_step (step_idx, traj_ctrl.d, traj_x, traj_y, traj_ctrl.z );
+				step_idx++;
+				if(step_idx >= TRAJ_MAXSTEPS) {
+					break;
+				}
+			}
+		}
+		else if {
+			for(; traj_x >= traj_ctrl.x; traj_x -= TRAJ_RES) {
+				
+				traj_y = traj_solve_y (traj_x, traj_ctrl.x, traj_ctrl.y, traj_ctrl.lastx, traj_ctrl.lasty );
+				traj_calc_step (step_idx, traj_ctrl.d, traj_x, traj_y, traj_ctrl.z );
+				step_idx++;
+				if(step_idx >= TRAJ_MAXSTEPS) {
+					break;
+				}
+			}			
+		}
+		
+		traj_step_idx = 0;
+		traj_step_num = step_idx;
+		array_phase_idx = 0;
+		
+		traj_ctrl.lastx = traj_ctrl.x;
+		traj_ctrl.lasty = traj_ctrl.y;
+		traj_ctrl.lastz = traj_ctrl.z;
+		
+		enableTimer4 ();
+	}
+	else if(mode == MODE_ON) {
+		traj_calc_step (0, traj_ctrl.d, traj_ctrl.x, traj_ctrl.y, traj_ctrl.z );
+		
+		traj_step_idx = 0;
+		traj_step_num = 1;
+		array_phase_idx = 0;
+		
+		traj_ctrl.lastx = traj_ctrl.x;
+		traj_ctrl.lasty = traj_ctrl.y;
+		traj_ctrl.lastz = traj_ctrl.z;
+		
+		enableTimer4 ();
+	}
+	else if(mode == MODE_FLAT) {
+		traj_calc_step (0, traj_ctrl.d, 0, 0, 0 );
+		
+		traj_step_idx = 0;
+		traj_step_num = 1;
+		array_phase_idx = 0;
+		
+		traj_ctrl.x = 0;
+		traj_ctrl.y = 0;
+		traj_ctrl.z = 0;
+		traj_ctrl.lastx = traj_ctrl.x;
+		traj_ctrl.lasty = traj_ctrl.y;
+		traj_ctrl.lastz = traj_ctrl.z;
+		
+		enableTimer4 ();
+	}
+	else if(mode == MODE_OFF) {
+		disableTimer4 ();
+	}
+	
+} //input_execute
+
+/*
+
+*/
+void input_print () {
+	
+	if(mode == MODE_MOVE_OFF || mode == MODE_MOVE_ON){
+		Serial.print("Move from ("); Serial.print(traj_ctrl.lastx); Serial.print(","); Serial.print(traj_ctrl.lasty); Serial.print(","); Serial.print(traj_ctrl.lastz); Serial.print(") to ("); Serial.print(traj_ctrl.x); Serial.print(","); Serial.print(traj_ctrl.y); Serial.print(","); Serial.print(traj_ctrl.z); Serial.print(") at "); Serial.print(traj_ctrl.s); Serial.print("mm/s with duty cycle of "); Serial.print(traj_ctrl.d);
+		if(mode = MODE_MOVE_ON) {
 			 Serial.print(" then keep active");
 		}
 		else {
 			 Serial.print(" then deactivate");
 		}
 	}
-	else if(state.isActiveStatic) {
-    if(state.isFlat) {
-      Serial.print("Activate flat mode with duty cycle of "); Serial.print(state.d);
-    }
-		else {
-		  Serial.print("Activate at ("); Serial.print(state.x); Serial.print(","); Serial.print(state.y); Serial.print(","); Serial.print(state.z); Serial.print(") with duty cycle of "); Serial.print(state.d);
-		}
+	else if(mode == MODE_ON) {
+		Serial.print("Activate at ("); Serial.print(traj_ctrl.x); Serial.print(","); Serial.print(traj_ctrl.y); Serial.print(","); Serial.print(traj_ctrl.z); Serial.print(") with duty cycle of "); Serial.print(traj_ctrl.d);
 	}
-	if(state.isFlat) {
-		Serial.print("Activate flat mode with duty cycle of "); Serial.print(state.d);
+	else if(mode == MODE_FLAT) {
+		Serial.print("Activate flat mode with duty cycle of "); Serial.print(traj_ctrl.d);
 	}
-	if(state.isStop) {
+	else if(mode == MODE_OFF) {
 		Serial.print("Deactivate");
 	}
 	Serial.print("\n");
 	
-} //printCommand
+} //input_print
 
-void trand_array_load ( t_transd_array *transd_array ){
+/*
+
+*/
+void transd_array_load ( t_transd_array *transd_array ){
 	
 	uint8_t x, y;
 	
@@ -511,7 +615,7 @@ void trand_array_load ( t_transd_array *transd_array ){
 			transd_array_set( transd_array, x, y, ARRAY_CALIBRATION[x][y][0], ARRAY_CALIBRATION[x][y][1] );
 		}
 	}
-} /trand_array_load
+} //transd_array_load
 
 
 
