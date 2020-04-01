@@ -7,7 +7,7 @@ void setTimer4 () {
 	/*
 		400kHz, 2.5us
 		
-		Timer 4
+		Timer 4 16bits
 		
 		Prescaler x resolution x max value (values in microseconds)
 			CLOCK	PRESCALER	RESOLUTION	MAX TIME

@@ -34,6 +34,7 @@
 #include "Ultrasonic.h"
 #include "Debug.h"
 #include "Timer4.h"
+#include "Timer5.h"
 
 #define TRANS_DIAMETER 16 //diameter of the element in millimeters (total length of the array cant exceed 255 millimeters)
 #define TRANS_SEPARATION 2 //distance between two consecutive elements in the array in millimeters (total length of the array cant exceed 255 millimeters)
@@ -50,10 +51,10 @@
 /* PROTOTYPES */
 
 ISR( TIMER4_COMPA_vect );
+ISR( TIMER5_COMPA_vect );
 
 void traj_calc_step (uint8_t step_idx, const uint8_t duty_cycle, const uint8_t focus_x, const uint8_t focus_y, const uint8_t focus_z );
 uint8_t traj_solve_y (uint8_t x, uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2 );
-
 
 uint8_t input_parse ();
 void input_parse_token (char *token);
@@ -265,7 +266,6 @@ void setup () {
 	mode = MODE_OFF;
 } //setup
 
-
 void loop () {
 	
 	if(input_parse()) {
@@ -280,6 +280,7 @@ void loop () {
 */
 ISR( TIMER4_COMPA_vect ) {
 
+	//buffer the indexes to optimize access as they're volatile
 	uint8_t phase_idx = array_phase_idx;
 	uint8_t step_idx = traj_step_idx;
 	
@@ -300,6 +301,21 @@ ISR( TIMER4_COMPA_vect ) {
 	phase_idx < ARRAY_PHASERES ? array_phase_idx++ : array_phase_idx = 0;
 
 } //ISR T4
+
+/*
+
+*/
+ISR( TIMER5_COMPA_vect ) {
+
+	
+	if(traj_step_idx <= traj_step_num - 1) { //increments the step until reaches the last step
+		traj_step_idx++;
+	}
+	else { //then stay in the last step and disables the timer
+		disableTimer5 ();
+	}
+
+} //ISR T5
 
 /*
 
@@ -530,6 +546,12 @@ void input_execute (){
 			}			
 		}
 		
+		//calc speed
+		
+		//calc traj update period
+		
+		setTimer5 (/* INTERVAL */);
+		
 		traj_step_idx = 0;
 		traj_step_num = step_idx;
 		array_phase_idx = 0;
@@ -539,6 +561,7 @@ void input_execute (){
 		traj_ctrl.lastz = traj_ctrl.z;
 		
 		enableTimer4 ();
+		enableTimer5 ();
 	}
 	else if(mode == MODE_ON) {
 		traj_calc_step (0, traj_ctrl.d, traj_ctrl.x, traj_ctrl.y, traj_ctrl.z );
@@ -551,6 +574,8 @@ void input_execute (){
 		traj_ctrl.lasty = traj_ctrl.y;
 		traj_ctrl.lastz = traj_ctrl.z;
 		
+		
+		disableTimer5 ();
 		enableTimer4 ();
 	}
 	else if(mode == MODE_FLAT) {
@@ -567,9 +592,11 @@ void input_execute (){
 		traj_ctrl.lasty = traj_ctrl.y;
 		traj_ctrl.lastz = traj_ctrl.z;
 		
+		disableTimer5 ();
 		enableTimer4 ();
 	}
 	else if(mode == MODE_OFF) {
+		disableTimer5 ();
 		disableTimer4 ();
 	}
 	
