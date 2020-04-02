@@ -6,7 +6,7 @@
 	extern "C" {
 #endif
 
-void setTimer5 (uint16_t interval);
+void setTimer5 (uint32_t interval);
 void enableTimer5 ();
 void disableTimer5 ();
 

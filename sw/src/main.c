@@ -53,8 +53,11 @@
 ISR( TIMER4_COMPA_vect );
 ISR( TIMER5_COMPA_vect );
 
+uint8_t traj_calc (const uint8_t from_x, const uint8_t from_y, const uint8_t from_z, const uint8_t to_x, const uint8_t to_y, const uint8_t to_z );
 void traj_calc_step (uint8_t step_idx, const uint8_t duty_cycle, const uint8_t focus_x, const uint8_t focus_y, const uint8_t focus_z );
 uint8_t traj_solve_y (uint8_t x, uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2 );
+uint8_t traj_solve_z (uint8_t x, uint8_t x1, uint8_t z1, uint8_t x2, uint8_t z2 );
+uint32_t traj_calc_speed (const uint8_t s, const uint8_t from_x, const uint8_t from_y, const uint8_t from_z, const uint8_t to_x, const uint8_t to_y, const uint8_t to_z );
 
 uint8_t input_parse ();
 void input_parse_token (char *token);
@@ -320,6 +323,64 @@ ISR( TIMER5_COMPA_vect ) {
 /*
 
 */
+uint8_t traj_calc (const uint8_t from_x, const uint8_t from_y, const uint8_t from_z, const uint8_t to_x, const uint8_t to_y, const uint8_t to_z ) {
+	
+	uint8_t traj_x, traj_y, traj_z, step_idx;
+
+	step_idx = 0;
+	
+	if( from_x != to_x ) { /* if the trajectory isn't perperdicular to the x axys */
+		
+		traj_x = from_x;
+		
+		for(; (from_x < to_x) ? (traj_x <= to_x) : (traj_x >= to_x); (from_x < to_x) ? (traj_x += TRAJ_RES) : (traj_x -= TRAJ_RES) ) {
+			
+			traj_y = traj_solve_y (traj_x, to_x, to_y, from_x, from_y );
+			traj_z = traj_solve_z (traj_x, to_x, to_z, from_x, from_z );
+			traj_calc_step (step_idx, traj_ctrl.d, traj_x, traj_y, traj_z );
+			step_idx++;
+			if(step_idx >= TRAJ_MAXSTEPS) {
+				break;
+			}
+		}
+	}
+	else if( from_y != to_y ) { /* if the trajectory is perperdicular to the x axys but isn't perperdicular to the y axys */
+		
+		traj_x = from_x;
+		traj_y = from_y;
+		
+		for(; (from_y < to_y) ? (traj_y <= to_y) : (traj_y >= to_y); (from_y < to_y) ? (traj_y += TRAJ_RES) : (traj_y -= TRAJ_RES) ) {
+			
+			traj_z = traj_solve_z (traj_y, to_y, to_z, from_y, from_z );
+			traj_calc_step (step_idx, traj_ctrl.d, traj_x, traj_y, traj_z );
+			step_idx++;
+			if(step_idx >= TRAJ_MAXSTEPS) {
+				break;
+			}
+		}
+	}
+	else { /* if the trajectory is perperdicular to the x and y axys */
+		
+		traj_x = from_x;
+		traj_y = from_y;
+		traj_z = from_z;
+		
+		for(; (from_z < to_z) ? (traj_z <= to_z) : (traj_z >= to_z); (from_z < to_z) ? (traj_z += TRAJ_RES) : (traj_z -= TRAJ_RES) ) {
+			
+			traj_calc_step (step_idx, traj_ctrl.d, traj_x, traj_y, traj_z );
+			step_idx++;
+			if(step_idx >= TRAJ_MAXSTEPS) {
+				break;
+			}
+		}
+	}
+	
+	return step_idx;
+}
+
+/*
+
+*/
 void traj_calc_step (uint8_t step_idx, const uint8_t duty_cycle, const uint8_t focus_x, const uint8_t focus_y, const uint8_t focus_z ) {
 	
 	uint8_t x, y, phase_idx, bit, pin, port_idx;
@@ -384,42 +445,6 @@ void traj_calc_step (uint8_t step_idx, const uint8_t duty_cycle, const uint8_t f
 /*
 
 */
-uint8_t input_parse () {
-	
-	char buffer[64];
-	uint8_t buffer_size, start_idx, end_idx;
-	/*
-	char *buffPtr;
-	uint8_t n;
-	*/
-	
-	if(Serial.available()) {
-		
-		buffer_size =  Serial.readBytes(buffer,63);
-		buffer[buffer_size] = '\0';
-		buffer_size++;
-		
-		start_idx = end_idx = 0;
-		while (start_idx < buffer_size) {
-						
-			while( buffer[start_idx + end_idx] != ' ' && buffer[start_idx + end_idx] != '\0' ) {
-				end_idx++;
-			}
-			buffer[start_idx + end_idx] = '\0';
-			input_parse_token(&buffer[start_idx]);
-			start_idx += end_idx + 1; end_idx = 0;
-		}
-		
-		return 1;
-	}
-	
-	return 0;
-		
-} //input_parse
-
-/*
-
-*/
 uint8_t traj_solve_y (uint8_t x, uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2 ) {
 	
 	int32_t _x, _y, _x1, _y1, _x2, _y2;
@@ -453,7 +478,60 @@ uint8_t traj_solve_y (uint8_t x, uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2 
 	//the point will always be at the first quadrant (x >= 0 and y >= 0)
 	y = uint8_t(_y);
 	
+	return y;
+	
 } //traj_solve_y
+
+/*
+
+*/
+uint8_t traj_solve_z (uint8_t x, uint8_t x1, uint8_t z1, uint8_t x2, uint8_t z2 ) {
+	
+	return traj_solve_y (x, x1, z1, x2, z2 );	
+} //traj_solve_y
+
+/*
+
+*/
+uint32_t traj_calc_speed (const uint8_t s, const uint8_t from_x, const uint8_t from_y, const uint8_t from_z, const uint8_t to_x, const uint8_t to_y, const uint8_t to_z ){
+	
+}
+
+/*
+
+*/
+uint8_t input_parse () {
+	
+	char buffer[64];
+	uint8_t buffer_size, start_idx, end_idx;
+	/*
+	char *buffPtr;
+	uint8_t n;
+	*/
+	
+	if(Serial.available()) {
+		
+		buffer_size =  Serial.readBytes(buffer,63);
+		buffer[buffer_size] = '\0';
+		buffer_size++;
+		
+		start_idx = end_idx = 0;
+		while (start_idx < buffer_size) {
+						
+			while( buffer[start_idx + end_idx] != ' ' && buffer[start_idx + end_idx] != '\0' ) {
+				end_idx++;
+			}
+			buffer[start_idx + end_idx] = '\0';
+			input_parse_token(&buffer[start_idx]);
+			start_idx += end_idx + 1; end_idx = 0;
+		}
+		
+		return 1;
+	}
+	
+	return 0;
+		
+} //input_parse
 
 /*
 
@@ -516,54 +594,28 @@ void input_parse_token (char *token) {
 */
 void input_execute (){
 	
-	uint8_t traj_x, traj_y, step_idx;
+	uint32_t interval;
 	
 	if(mode == MODE_MOVE_OFF || mode == MODE_MOVE_ON){
 		
-		step_idx = 0;
-		traj_x = traj_ctrl.lastx;
+		traj_step_num = traj_calc (traj_ctrl.lastx, traj_ctrl.lasty, traj_ctrl.lastz, traj_ctrl.x, traj_ctrl.y, traj_ctrl.z );
 		
-		if(traj_x <= traj_ctrl.x) {
-			for(; traj_x <= traj_ctrl.x; traj_x += TRAJ_RES) {
+		interval = traj_calc_speed (traj_ctrl.s, traj_ctrl.lastx, traj_ctrl.lasty, traj_ctrl.lastz, traj_ctrl.x, traj_ctrl.y, traj_ctrl.z );
 				
-				traj_y = traj_solve_y (traj_x, traj_ctrl.x, traj_ctrl.y, traj_ctrl.lastx, traj_ctrl.lasty );
-				traj_calc_step (step_idx, traj_ctrl.d, traj_x, traj_y, traj_ctrl.z );
-				step_idx++;
-				if(step_idx >= TRAJ_MAXSTEPS) {
-					break;
-				}
-			}
-		}
-		else if {
-			for(; traj_x >= traj_ctrl.x; traj_x -= TRAJ_RES) {
-				
-				traj_y = traj_solve_y (traj_x, traj_ctrl.x, traj_ctrl.y, traj_ctrl.lastx, traj_ctrl.lasty );
-				traj_calc_step (step_idx, traj_ctrl.d, traj_x, traj_y, traj_ctrl.z );
-				step_idx++;
-				if(step_idx >= TRAJ_MAXSTEPS) {
-					break;
-				}
-			}			
-		}
-		
-		//calc speed
-		
-		//calc traj update period
-		
-		setTimer5 (/* INTERVAL */);
+		setTimer5 (interval);
 		
 		traj_step_idx = 0;
-		traj_step_num = step_idx;
 		array_phase_idx = 0;
 		
 		traj_ctrl.lastx = traj_ctrl.x;
 		traj_ctrl.lasty = traj_ctrl.y;
 		traj_ctrl.lastz = traj_ctrl.z;
 		
-		enableTimer4 ();
 		enableTimer5 ();
+		enableTimer4 ();
 	}
 	else if(mode == MODE_ON) {
+		
 		traj_calc_step (0, traj_ctrl.d, traj_ctrl.x, traj_ctrl.y, traj_ctrl.z );
 		
 		traj_step_idx = 0;
@@ -579,6 +631,7 @@ void input_execute (){
 		enableTimer4 ();
 	}
 	else if(mode == MODE_FLAT) {
+		
 		traj_calc_step (0, traj_ctrl.d, 0, 0, 0 );
 		
 		traj_step_idx = 0;
@@ -596,6 +649,7 @@ void input_execute (){
 		enableTimer4 ();
 	}
 	else if(mode == MODE_OFF) {
+		
 		disableTimer5 ();
 		disableTimer4 ();
 	}
@@ -643,11 +697,3 @@ void transd_array_load ( t_transd_array *transd_array ){
 		}
 	}
 } //transd_array_load
-
-
-
-
-
-
-
-
