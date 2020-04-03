@@ -35,6 +35,7 @@
 #include "Debug.h"
 #include "Timer4.h"
 #include "Timer5.h"
+#include "Math.h"
 
 #define TRANS_DIAMETER 16 //diameter of the element in millimeters (total length of the array cant exceed 255 millimeters)
 #define TRANS_SEPARATION 2 //distance between two consecutive elements in the array in millimeters (total length of the array cant exceed 255 millimeters)
@@ -495,6 +496,34 @@ uint8_t traj_solve_z (uint8_t x, uint8_t x1, uint8_t z1, uint8_t x2, uint8_t z2 
 */
 uint32_t traj_calc_speed (const uint8_t s, const uint8_t from_x, const uint8_t from_y, const uint8_t from_z, const uint8_t to_x, const uint8_t to_y, const uint8_t to_z ){
 	
+	uint32_t distance, speed_axys;
+	int8_t Dx, Dy, Dz;
+	
+	Dx = to_x - from_x;
+	Dy = to_y - from_y;
+	Dz = to_z - from_z;
+	
+	distance = (Dx * Dx) + (Dy * Dy) + (Dz * Dz); //squared distance
+	//distance *= 100; //multiplies by 10 squared to "keep" one decimal place after the square root.
+	distance = transd_sqrt_int(distance); //x10. After taking the square root, the distance is not in milimeters
+	//distance /= 10;
+	
+	if( from_x != to_x ) { /* if the trajectory isn't perperdicular to the x axys */
+		
+		speed_axys = (s * Dx) / distance;
+	}
+	else if( from_y != to_y ) { /* if the trajectory is perperdicular to the x axys but isn't perperdicular to the y axys */
+		
+		speed_axys = (s * Dy) / distance;
+	}
+	else { /* if the trajectory is perperdicular to the x and y axys */
+		
+		speed_axys = s;
+	}
+	
+	interval = (TRAJ_RES * 10E6) / speed_axys;
+	
+	return interval;
 }
 
 /*

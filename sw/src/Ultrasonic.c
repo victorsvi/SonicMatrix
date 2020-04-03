@@ -32,6 +32,7 @@
 
 #include "Debug.h"
 #include "Ultrasonic.h"
+#include "Math.h"
 
 /*
 #define SOUND_SPEED 343600 //speed of the sound in the medium in milimeters per second (at 20°C dry air)
@@ -44,7 +45,6 @@
 #define TRANSD_PHRES 10 //Number of steps that a wave period is divided. Increase the phase_res to obtain a more accurate wavefrom. Decrease the phase_res if the uC can't update the outputs fast enough to support the 40kHz frequency.
 */
 
-uint32_t transd_sqrt_int (const uint32_t x);
 uint16_t transd_getPattern( const uint8_t phase_res, const uint8_t phase, const uint8_t duty );
 
 uint8_t transd_init( t_transd *transd, const uint8_t index_x, const uint8_t index_y, const uint8_t port_pin, const uint8_t phase_comp, const uint8_t elem_diameter, const uint8_t elem_separation );
@@ -391,32 +391,6 @@ uint8_t transd_dumpCSV ( FILE *f,  t_transd_array *transd_array ){
 
 
 /* PRIVATE */
-
-/**
- * Performs the integer square root (truncated). Uses an iterative method
- * @param x Number to take the sqare root.
- * @return The square root of x.
- */
-uint32_t transd_sqrt_int (const uint32_t x) {
-
-    uint32_t l = 1; // the lowest guess number that can be the root of x
-    uint32_t h = x; // the highest guess number that can be the root of x
-    uint32_t n = (l + h)/2; //the current guess being tested
-
-    while ( l < n ){ //the stop condition is when the lowest possible guess is equal or greater the hisghest guess.
-
-        if( (n * n) <= x ){ //if the guess is too small, updates increases the lowest guess
-            l = n;
-        }
-        else if ( (n * n) > x ) { //if the guess is too big, updates decreases the hisghest guess
-            h = n;
-        }
-        n = (l + h)/2; //the new guess is a midpoint
-
-    };
-
-    return l;
-}
 
 /**
  * Calculates the 16 bit pattern that represents the signal based on the phase and duty cycle.

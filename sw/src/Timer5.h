@@ -6,6 +6,8 @@
 	extern "C" {
 #endif
 
+#include <stdint.h>
+
 void setTimer5 (uint32_t interval);
 void enableTimer5 ();
 void disableTimer5 ();

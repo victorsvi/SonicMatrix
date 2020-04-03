@@ -1,6 +1,6 @@
 
-#ifndef TIMER4_H
-#define TIMER4_H
+#ifndef MATH_H
+#define MATH_H
 
 #ifdef __cplusplus
 	extern "C" {
@@ -8,9 +8,7 @@
 
 #include <stdint.h>
 
-void setTimer4 ();
-void enableTimer4 ();
-void disableTimer4 ();
+uint32_t transd_sqrt_int (const uint32_t x);
 
 #ifdef __cplusplus
 	}
