@@ -29,56 +29,237 @@
 */
 
 
-//#include <stdlib.h>
 #include <stdint.h>
-//#include <EEPROM.h>
 #include <Arduino.h>
 #include "Ultrasonic.h"
 #include "Debug.h"
 #include "Timer4.h"
+#include "Timer5.h"
+#include "Math.h"
 
-#define TRANS_DIAMETER 16 //diameter of the element in milimeters
-#define TRANS_SEPARATION 2 //distance between two consecutive elements in the array in milimeters
+//#define INPUT_ECHO
+
+#define TRANS_DIAMETER 16 //diameter of the element in millimeters (total length of the array cant exceed 255 millimeters)
+#define TRANS_SEPARATION 2 //distance between two consecutive elements in the array in millimeters (total length of the array cant exceed 255 millimeters)
 #define ARRAY_SIZE_X 8 //number of transducers of the array in the x dimension
 #define ARRAY_SIZE_Y 8 //number of transducers of the array in the y dimension
-#define ARRAY_PHASERES 10 //number of transducers of the array in the y dimension
-#define TRAJ_RES 1 //trajectory resolution in milimeters
-#define TRAJ_MAXSTEPS 100 //maximum steps of the trajectory
+#define ARRAY_PHASERES 10 //number of transducers of the array in the y dimension (max 16 bits)
+#define TRAJ_RES 1 //trajectory maximum resolution in millimeters
+#define TRAJ_MAXSTEPS 64 //maximum steps of the trajectory (max 255)
+
+/* MACROS */
+
+#define MSK(b) (1 << b) //creates a mask with the bth bit high
 
 /* PROTOTYPES */
 
-void trand_array_load ( t_transd_array *transd_array );
 ISR( TIMER4_COMPA_vect );
-uint8_t parseInput ();
-void parseInputToken (char *token);
-void clearState ();
-void printCommand ();
+ISR( TIMER5_COMPA_vect );
+
+uint8_t traj_calc (const uint8_t from_x, const uint8_t from_y, const uint8_t from_z, const uint8_t to_x, const uint8_t to_y, const uint8_t to_z );
+void traj_calc_step (uint8_t step_idx, const uint8_t duty_cycle, const uint8_t focus_x, const uint8_t focus_y, const uint8_t focus_z );
+uint8_t traj_solve_y (uint8_t x, uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2 );
+uint8_t traj_solve_z (uint8_t x, uint8_t x1, uint8_t z1, uint8_t x2, uint8_t z2 );
+uint32_t traj_calc_speed (const uint8_t s, const uint8_t from_x, const uint8_t from_y, const uint8_t from_z, const uint8_t to_x, const uint8_t to_y, const uint8_t to_z );
+
+uint8_t input_parse ();
+void input_parse_token (char *token);
+void input_execute ();
+void input_print ();
+
+void transd_array_load ( t_transd_array *transd_array );
+
+/* DATA DEFINITION */
+
+enum e_mode {	MODE_OFF,		// turned off, signal is held low
+				MODE_ON, 		// turned on, with static focal point
+				MODE_MOVE_OFF, 	// move to focal point to target then tuns off
+				MODE_MOVE_ON, 	// move to focal point to target and keeps on
+				MODE_FLAT		// turned on, flat mode, all transducers in phase
+};
+
+struct s_traj_ctrl {
+	uint8_t x = 0, y = 0, z = 0, d = 0, s = 0;
+	uint8_t lastx = 0, lasty = 0, lastz = 0;
+};
+
+struct s_pin {
+	volatile uint8_t *bank_ptr;
+	uint8_t bit_msk;
+};
 
 /* GLOBAL VARIABLES */
 
-const uint8_t ARRAY_CALIBRATION[ARRAY_SIZE_X][ARRAY_SIZE_Y][2] = {
+const uint8_t ARRAY_CALIBRATION[ARRAY_SIZE_X][ARRAY_SIZE_Y][2] PROGMEM = {
 	//pin numer, phase compensation
-	0, 0, //x0, y0
-	0, 0 //x0, y1
-}
+	4 , 0,//x0, y0
+	6 , 0,//x0, y1
+	7 , 0,
+	8 , 0,
+	9 , 0,
+	10, 0,
+	11, 0,
+	12, 0,
+	13, 0,
+	14, 0,
+	15, 0,
+	16, 0,
+	17, 0,
+	18, 0,
+	19, 0,
+	20, 0,
+	21, 0,
+	22, 0,
+	23, 0,
+	24, 0,
+	25, 0,
+	26, 0,
+	27, 0,
+	28, 0,
+	29, 0,
+	30, 0,
+	31, 0,
+	32, 0,
+	33, 0,
+	34, 0,
+	35, 0,
+	36, 0,
+	37, 0,
+	38, 0,
+	39, 0,
+	40, 0,
+	41, 0,
+	42, 0,
+	43, 0,
+	44, 0,
+	45, 0,
+	46, 0,
+	47, 0,
+	48, 0,
+	49, 0,
+	50, 0,
+	51, 0,
+	52, 0,
+	53, 0,
+	55, 0,
+	56, 0,
+	57, 0,
+	58, 0,
+	59, 0,
+	60, 0,
+	61, 0,
+	62, 0,
+	63, 0,
+	64, 0,
+	65, 0,
+	66, 0,
+	67, 0,
+	68, 0,
+	69, 0
+};
 
-struct s_state {
-	uint8_t isActiveMove = 0, isActiveStatic = 0, isStop = 0, isFlat = 0;
-	uint8_t x = 0, y = 0, z = 0, d = 0, s = 0;
-	uint8_t currStep = 0;
-	uint8_t moveCurrStep = 0, moveNSteps = 0;
-	uint8_t lastx = 0, lasty = 0, lastz = 0;
-} state;
+/* Port bank and bit mask for each pin indexed by pin number */
+const struct s_pin PINS[70] = {
+	{&PORTE, MSK(0)},
+	{&PORTE, MSK(1)},
+	{&PORTE, MSK(4)},
+	{&PORTE, MSK(5)},
+	{&PORTG, MSK(5)},
+	{&PORTE, MSK(3)},
+	{&PORTH, MSK(3)},
+	{&PORTH, MSK(4)},
+	{&PORTH, MSK(5)},
+	{&PORTH, MSK(6)},
+	{&PORTB, MSK(4)},
+	{&PORTB, MSK(5)},
+	{&PORTB, MSK(6)},
+	{&PORTB, MSK(7)},
+	{&PORTJ, MSK(1)},
+	{&PORTJ, MSK(0)},
+	{&PORTH, MSK(1)},
+	{&PORTH, MSK(0)},
+	{&PORTD, MSK(3)},
+	{&PORTD, MSK(2)},
+	{&PORTD, MSK(1)},
+	{&PORTD, MSK(0)},
+	{&PORTA, MSK(0)},
+	{&PORTA, MSK(1)},
+	{&PORTA, MSK(2)},
+	{&PORTA, MSK(3)},
+	{&PORTA, MSK(4)},
+	{&PORTA, MSK(5)},
+	{&PORTA, MSK(6)},
+	{&PORTA, MSK(7)},
+	{&PORTC, MSK(7)},
+	{&PORTC, MSK(6)},
+	{&PORTC, MSK(5)},
+	{&PORTC, MSK(4)},
+	{&PORTC, MSK(3)},
+	{&PORTC, MSK(2)},
+	{&PORTC, MSK(1)},
+	{&PORTC, MSK(0)},
+	{&PORTD, MSK(7)},
+	{&PORTG, MSK(2)},
+	{&PORTG, MSK(1)},
+	{&PORTG, MSK(0)},
+	{&PORTL, MSK(7)},
+	{&PORTL, MSK(6)},
+	{&PORTL, MSK(5)},
+	{&PORTL, MSK(4)},
+	{&PORTL, MSK(3)},
+	{&PORTL, MSK(2)},
+	{&PORTL, MSK(1)},
+	{&PORTL, MSK(0)},
+	{&PORTB, MSK(3)},
+	{&PORTB, MSK(2)},
+	{&PORTB, MSK(1)},
+	{&PORTB, MSK(0)},
+	{&PORTF, MSK(0)},
+	{&PORTF, MSK(1)},
+	{&PORTF, MSK(2)},
+	{&PORTF, MSK(3)},
+	{&PORTF, MSK(4)},
+	{&PORTF, MSK(5)},
+	{&PORTF, MSK(6)},
+	{&PORTF, MSK(7)},
+	{&PORTK, MSK(0)},
+	{&PORTK, MSK(1)},
+	{&PORTK, MSK(2)},
+	{&PORTK, MSK(3)},
+	{&PORTK, MSK(4)},
+	{&PORTK, MSK(5)},
+	{&PORTK, MSK(6)},
+	{&PORTK, MSK(7)}
+};
+
+struct s_traj_ctrl traj_ctrl;
+volatile uint8_t traj_step_idx = 0, traj_step_num = 0;
+volatile uint8_t array_phase_idx = 0;
+enum e_mode mode;
 
 t_transd_array *transd_array = NULL;
 
-uint8_t traj_steps[TRAJ_MAXSTEPS][ARRAY_SIZE_X][ARRAY_SIZE_Y];
+uint8_t traj_port_buffer[TRAJ_MAXSTEPS][ARRAY_PHASERES][10]; //buffers the ports state for each coordinate (x,y,z) of the movement, for each slice of the wave period, for each PORT
 
 void setup () {
 	
 	Serial.begin(115200);
 	
-	setTimer4()
+	//set ports as output (bit high = output)
+	DDRA = 0xFF;
+	DDRB = 0xFF;
+	DDRC = 0xFF;
+	DDRD = 0xFF;
+	//DDRE = 0xFF;
+	DDRF = 0xFF;
+	DDRG = 0xFF;
+	DDRH = 0xFF;
+	//DDRI = 0xFF;
+	DDRJ = 0xFF;
+	DDRK = 0xFF;
+	DDRL = 0xFF;
+	
+	setTimer4();
 	
 	transd_array = transd_array_init( ARRAY_SIZE_X, ARRAY_SIZE_Y, TRANS_DIAMETER, TRANS_SEPARATION, ARRAY_PHASERES );
 	if( transd_array == NULL ) {
@@ -86,24 +267,274 @@ void setup () {
 		DEBUG_MSG("The transducer array pointer is null")
 		#endif
 	}
-	trand_array_load (transd_array);
+	transd_array_load (transd_array);
 	
-}
+	mode = MODE_OFF;
+} //setup
 
 void loop () {
 	
+	if(input_parse()) {
+		input_print();
+		input_execute();
+	}
 	
-}
+} //loop
 
+/*
+
+*/
 ISR( TIMER4_COMPA_vect ) {
+
+	//buffer the indexes to optimize access as they're volatile
+	uint8_t phase_idx = array_phase_idx;
+	uint8_t step_idx = traj_step_idx;
 	
+	// Just copy the port state from the buffer
+	PORTA = traj_port_buffer[step_idx][phase_idx][0];
+	PORTB = traj_port_buffer[step_idx][phase_idx][1];
+	PORTC = traj_port_buffer[step_idx][phase_idx][2];
+	PORTD = traj_port_buffer[step_idx][phase_idx][3];
+	//PORTE = 0;
+	PORTF = traj_port_buffer[step_idx][phase_idx][4];
+	PORTG = traj_port_buffer[step_idx][phase_idx][5];
+	PORTH = traj_port_buffer[step_idx][phase_idx][6];
+	//PORTI = 0;
+	PORTJ = traj_port_buffer[step_idx][phase_idx][7];
+	PORTK = traj_port_buffer[step_idx][phase_idx][8];
+	PORTL = traj_port_buffer[step_idx][phase_idx][9];
 	
+	phase_idx < ARRAY_PHASERES ? array_phase_idx++ : array_phase_idx = 0;
+
+} //ISR T4
+
+/*
+
+*/
+ISR( TIMER5_COMPA_vect ) {
+
+	
+	if(traj_step_idx <= traj_step_num - 1) { //increments the step until reaches the last step
+		traj_step_idx++;
+	}
+	else { //then stay in the last step and disables the timer
+		disableTimer5 ();
+	}
+
+} //ISR T5
+
+/*
+
+*/
+uint8_t traj_calc (const uint8_t from_x, const uint8_t from_y, const uint8_t from_z, const uint8_t to_x, const uint8_t to_y, const uint8_t to_z ) {
+	
+	uint8_t traj_x, traj_y, traj_z, step_idx;
+
+	step_idx = 0;
+	
+	if( from_x != to_x ) { /* if the trajectory isn't perperdicular to the x axys */
+		
+		traj_x = from_x;
+		
+		for(; (from_x < to_x) ? (traj_x <= to_x) : (traj_x >= to_x); (from_x < to_x) ? (traj_x += TRAJ_RES) : (traj_x -= TRAJ_RES) ) {
+			
+			traj_y = traj_solve_y (traj_x, to_x, to_y, from_x, from_y );
+			traj_z = traj_solve_z (traj_x, to_x, to_z, from_x, from_z );
+			traj_calc_step (step_idx, traj_ctrl.d, traj_x, traj_y, traj_z );
+			step_idx++;
+			if(step_idx >= TRAJ_MAXSTEPS) {
+				break;
+			}
+		}
+	}
+	else if( from_y != to_y ) { /* if the trajectory is perperdicular to the x axys but isn't perperdicular to the y axys */
+		
+		traj_x = from_x;
+		traj_y = from_y;
+		
+		for(; (from_y < to_y) ? (traj_y <= to_y) : (traj_y >= to_y); (from_y < to_y) ? (traj_y += TRAJ_RES) : (traj_y -= TRAJ_RES) ) {
+			
+			traj_z = traj_solve_z (traj_y, to_y, to_z, from_y, from_z );
+			traj_calc_step (step_idx, traj_ctrl.d, traj_x, traj_y, traj_z );
+			step_idx++;
+			if(step_idx >= TRAJ_MAXSTEPS) {
+				break;
+			}
+		}
+	}
+	else { /* if the trajectory is perperdicular to the x and y axys */
+		
+		traj_x = from_x;
+		traj_y = from_y;
+		traj_z = from_z;
+		
+		for(; (from_z < to_z) ? (traj_z <= to_z) : (traj_z >= to_z); (from_z < to_z) ? (traj_z += TRAJ_RES) : (traj_z -= TRAJ_RES) ) {
+			
+			traj_calc_step (step_idx, traj_ctrl.d, traj_x, traj_y, traj_z );
+			step_idx++;
+			if(step_idx >= TRAJ_MAXSTEPS) {
+				break;
+			}
+		}
+	}
+	
+	return step_idx;
 }
 
-uint8_t parseInput () {
+/*
+
+*/
+void traj_calc_step (uint8_t step_idx, const uint8_t duty_cycle, const uint8_t focus_x, const uint8_t focus_y, const uint8_t focus_z ) {
+	
+	uint8_t x, y, phase_idx, bit, pin, port_idx = 0;
+	
+	for(phase_idx = 0; phase_idx < ARRAY_PHASERES; phase_idx++){
+		traj_port_buffer[step_idx][phase_idx][0] = 0x00; //PORTA
+		traj_port_buffer[step_idx][phase_idx][1] = 0x00; //PORTB
+		traj_port_buffer[step_idx][phase_idx][2] = 0x00; //PORTC
+		traj_port_buffer[step_idx][phase_idx][3] = 0x00; //PORTD
+		traj_port_buffer[step_idx][phase_idx][4] = 0x00; //PORTF
+		traj_port_buffer[step_idx][phase_idx][5] = 0x00; //PORTG
+		traj_port_buffer[step_idx][phase_idx][6] = 0x00; //PORTH
+		traj_port_buffer[step_idx][phase_idx][7] = 0x00; //PORTJ
+		traj_port_buffer[step_idx][phase_idx][8] = 0x00; //PORTK
+		traj_port_buffer[step_idx][phase_idx][9] = 0x00; //PORTL
+	}
+	
+	if(mode != MODE_FLAT) {
+		transd_array_calcfocus( transd_array, duty_cycle, focus_x, focus_y, focus_z );
+	}
+	else {
+		transd_array_calcflat( transd_array, duty_cycle );
+	}
+	
+	
+	for(x = 0; x < ARRAY_SIZE_X; x++){
+		for(y = 0; y < ARRAY_SIZE_Y; y++){
+			
+			//gets the pin that the transducer is connected to
+			pin = (transd_array->transd_ptr + x * ARRAY_SIZE_Y + y)->port_pin;
+			
+			if(PINS[pin].bank_ptr == &PORTA) port_idx = 0;
+			if(PINS[pin].bank_ptr == &PORTB) port_idx = 1;
+			if(PINS[pin].bank_ptr == &PORTC) port_idx = 2;
+			if(PINS[pin].bank_ptr == &PORTD) port_idx = 3;
+			if(PINS[pin].bank_ptr == &PORTF) port_idx = 4;
+			if(PINS[pin].bank_ptr == &PORTG) port_idx = 5;
+			if(PINS[pin].bank_ptr == &PORTH) port_idx = 6;
+			if(PINS[pin].bank_ptr == &PORTJ) port_idx = 7;
+			if(PINS[pin].bank_ptr == &PORTK) port_idx = 8;
+			if(PINS[pin].bank_ptr == &PORTL) port_idx = 9;
+			
+			for(phase_idx = 0; phase_idx < ARRAY_PHASERES; phase_idx++){
+			
+				//access the pattern and gets the value for the bit representing the current step
+				bit = (transd_array->transd_ptr + x * ARRAY_SIZE_Y + y)->pattern & (1 << phase_idx);
+				
+				//updates only the current pin
+				if(bit) {
+					traj_port_buffer[step_idx][phase_idx][port_idx] |= PINS[pin].bit_msk;
+				}
+				/* no need to set as low because all the bits of the buffer are set to zero
+				else {
+					traj_port_buffer[step_idx][phase_idx][port_idx] &= ~PINS[pin].bit_idx;
+				}
+				*/
+			}
+		}
+	}
+} //traj_calc_step
+
+/*
+
+*/
+uint8_t traj_solve_y (uint8_t x, uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2 ) {
+	
+	int32_t _x, _y, _x1, _y1, _x2, _y2;
+	uint8_t y;
+	
+	//using 2 decimal places fixed point (force cast before multiplication)
+	 _x = int32_t( x) * 100; 
+	_x1 = int32_t(x1) * 100; 
+	_y1 = int32_t(y1) * 100; 
+	_x2 = int32_t(x2) * 100; 
+	_y2 = int32_t(y2) * 100;
+	
+	/*
+		Find a coordinate of a line trough two points
+		
+		from geometric analysis, the slope m for the line that pass trough the points (x1,y1) and (x2,y2) is m = (y2 - y1)/(x2 - x1) (1)
+		the same equation can be reorganized to find (x3, y3) given (x1,y1), x3 and m: y3 = m * (x3 - x1) + y1 (2)
+		replacing m from (1) in (2) gives y3 = (y2 - y1)/(x2 - x1) * (x3 - x1) + y1 (3)
+		the equation bellow is (3) reorganized to decrease the rounding error in the division (we are using integers)
+	*/
+	_y = ((_y2 - _y1) * (_x - _x1))/(_x2 - _x1) + _y1;
+	
+	//round for 2 decimal places
+	if(_y % 100 >= 50) {
+		_y += 50;
+	}
+	
+	//using 2 decimal places fixed point
+	_y /= 100;
+	
+	//the point will always be at the first quadrant (x >= 0 and y >= 0)
+	y = uint8_t(_y);
+	
+	return y;
+	
+} //traj_solve_y
+
+/*
+
+*/
+uint8_t traj_solve_z (uint8_t x, uint8_t x1, uint8_t z1, uint8_t x2, uint8_t z2 ) {
+	
+	return traj_solve_y (x, x1, z1, x2, z2 );	
+} //traj_solve_y
+
+/*
+
+*/
+uint32_t traj_calc_speed (const uint8_t s, const uint8_t from_x, const uint8_t from_y, const uint8_t from_z, const uint8_t to_x, const uint8_t to_y, const uint8_t to_z ){
+	
+	uint32_t distance, speed_axys, interval;
+	int8_t Dx, Dy, Dz;
+	
+	Dx = to_x - from_x;
+	Dy = to_y - from_y;
+	Dz = to_z - from_z;
+	
+	distance = (Dx * Dx) + (Dy * Dy) + (Dz * Dz); //squared distance
+	//distance *= 100; //multiplies by 10 squared to "keep" one decimal place after the square root.
+	distance = transd_sqrt_int(distance); //x10. After taking the square root, the distance is not in milimeters
+	//distance /= 10;
+	
+	if( from_x != to_x ) { /* if the trajectory isn't perperdicular to the x axys */
+		
+		speed_axys = (s * Dx) / distance;
+	}
+	else if( from_y != to_y ) { /* if the trajectory is perperdicular to the x axys but isn't perperdicular to the y axys */
+		
+		speed_axys = (s * Dy) / distance;
+	}
+	else { /* if the trajectory is perperdicular to the x and y axys */
+		
+		speed_axys = s;
+	}
+	
+	interval = (TRAJ_RES * 10E6) / speed_axys;
+	
+	return interval;
+}
+
+/*
+
+*/
+uint8_t input_parse () {
 	
 	char buffer[64];
-	uint8_t buffSize, start, end;
+	uint8_t buffer_size, start_idx, end_idx;
 	/*
 	char *buffPtr;
 	uint8_t n;
@@ -111,85 +542,32 @@ uint8_t parseInput () {
 	
 	if(Serial.available()) {
 		
-		buffSize =  Serial.readBytes(buffer,63);
-		buffer[buffSize] = '\0';
-		buffSize++;
+		buffer_size =  Serial.readBytes(buffer,63);
+		buffer[buffer_size] = '\0';
+		buffer_size++;
 		
-		start = end = 0;
-		while (start < buffSize) {
+		start_idx = end_idx = 0;
+		while (start_idx < buffer_size) {
 						
-			while( buffer[start + end] != ' ' && buffer[start + end] != '\0' ) {
-				end++;
+			while( buffer[start_idx + end_idx] != ' ' && buffer[start_idx + end_idx] != '\0' ) {
+				end_idx++;
 			}
-			buffer[start + end] = '\0';
-			parseInputToken(&buffer[start]);
-			start += end + 1; end = 0;
+			buffer[start_idx + end_idx] = '\0';
+			input_parse_token(&buffer[start_idx]);
+			start_idx += end_idx + 1; end_idx = 0;
 		}
 		
 		return 1;
 	}
 	
 	return 0;
-	
-		/*
-		start = 0; end = start; 
-		while( buffer[start + end] != ' ' && buffer[start + end] != '\0' ) {
-			end++;
-		}
-		buffer[start + end] = '\0';
-		focusTarget.x = atoi(&buffer[start]);
 		
-		if( start + end < buffSize ) {
-			start += end + 1; end = 0;
-			while( buffer[start + end] != ' ' && buffer[start + end] != '\0' ) {
-				end++;
-			}
-			buffer[start + end] = '\0';
-			focusTarget.y = atoi(&buffer[start]);
-		}
-		
-		if( start + end < buffSize ) {
-			start += end + 1; end = 0;
-			while( buffer[start + end] != ' ' && buffer[start + end] != '\0' ) {
-				end++;
-			}
-			buffer[start + end] = '\0';
-			focusTarget.z = atoi(&buffer[start]);
-		}
-		*/
-		/*
-		buffPtr = &buffer; n = 0; 
-		while( *(buffPtr + n) != ' ' && *(buffPtr + n) != '\0' ) {
-			n++;
-		}
-		*(buffPtr + n) = '\0';
-		focusTarget.x = atoi(buffPtr);
-		
-		buffPtr = (buffPtr + ++n); n = 0; 
-		if( buffPtr - &buffer < buffSize ) {
-			while( *(buffPtr + n) != ' ' && *(buffPtr + n) != '\0' ) {
-				n++;
-			}
-			*(buffPtr + n) = '\0';
-			focusTarget.y = atoi(buffPtr);
-		}
-		
-		buffPtr = (buffPtr + ++n); n = 0; 
-		if( buffPtr - &buffer < buffSize ) {
-			while( *(buffPtr + n) != ' ' && *(buffPtr + n) != '\0' ) {
-				n++;
-			}
-			*(buffPtr + n) = '\0';
-			focusTarget.z = atoi(buffPtr);
-		}
-		*/
-	
-}
+} //input_parse
 
 /*
 
 */
-void parseInputToken (char *token) {
+void input_parse_token (char *token) {
 	
 	if(token == NULL) return;
 	if(token[0] == '\0') return;
@@ -198,103 +576,157 @@ void parseInputToken (char *token) {
 		valid tokens:
 		syntax	action	mandatory_pars
 		m	Set the move mode (moves from the current position to the desired position then deactivates)	x, y, z, d, s
-		r	Set the realocate mode (moves from the current position to the desired position and keep active)	x, y, z, d, s
+		r	Set the relocate mode (moves from the current position to the desired position and keep active)	x, y, z, d, s
 		a	Activates the focal point at the desired position	x, y, z, d
 		f	Activates the flat mode	d
 		i	Deactivates the current mode
-		x[integer]	Sets the x focus coordinate. Value in milimeters
-		y[integer]	Sets the y focus coordinate. Value in milimeters
-		z[integer]	Sets the z focus coordinate. Value in milimeters
+		x[integer]	Sets the x focus coordinate. Value in millimeters
+		y[integer]	Sets the y focus coordinate. Value in millimeters
+		z[integer]	Sets the z focus coordinate. Value in millimeters
 		d[integer]	Sets the duty cycle. Values from 0 to 255, equating to 0% to 100%
-		s[integer]	Sets the speed of the displacement. Value in milimeters per second
+		s[integer]	Sets the speed of the displacement. Value in millimeters per second
 	*/
 	switch (token[0]) {
 		case 'i':
-			state.isStop = 1;
+			mode = MODE_OFF;
 			break;
 		case 'a':
-			state.isActiveStatic = 1;
+			mode = MODE_ON;
 			break;
 		case 'f':
-			state.isActiveStatic = 1;
-			state.isFlat = 1;
+			mode = MODE_FLAT;
 			break;
 		case 'm':
-			state.isActiveMove = 1;
+			mode = MODE_MOVE_OFF;
 			break;
 		case 'r':
-			state.isActiveStatic = 1;
-			state.isActiveMove = 1;
+			mode = MODE_MOVE_ON;
 			break;
 		case 'x':
-			state.x = atoi(&token[1]);
+			traj_ctrl.x = atoi(&token[1]);
 			break;
 		case 'y':
-			state.y = atoi(&token[1]);
+			traj_ctrl.y = atoi(&token[1]);
 			break;
 		case 'z':
-			state.z = atoi(&token[1]);
+			traj_ctrl.z = atoi(&token[1]);
 			break;
 		case 'd':
-			state.d = atoi(&token[1]);
+			traj_ctrl.d = atoi(&token[1]);
 			break;
 		case 's':
-			state.s = atoi(&token[1]);
+			traj_ctrl.s = atoi(&token[1]);
 			break;
 	}
-}
+} //input_parse_token
 
-void clearState () {
-	
-	state.lastx = state.x; state.lasty = state.y; state.lastz = state.z;
-	
-	state.isActiveMove = 0, state.isActiveStatic = 0, state.isStop = 0, state.isFlat = 0;
-	state.x = 0, state.y = 0, state.z = 0, state.d = 0, state.s = 0;
-	state.currStep = 0;
-	state.moveCurrStep = 0, state.moveNSteps = 0;
-	
-}
+/*
 
-void printCommand () {
+*/
+void input_execute (){
 	
-	if(state.isActiveMove){
-		Serial.print("Move from ("); Serial.print(state.lastx); Serial.print(","); Serial.print(state.lasty); Serial.print(","); Serial.print(state.lastz); Serial.print(") to ("); Serial.print(state.x); Serial.print(","); Serial.print(state.y); Serial.print(","); Serial.print(state.z); Serial.print(") at "); Serial.print(state.s); Serial.print("mm/s with duty cycle of "); Serial.print(state.d);
-		if(state.isActiveStatic) {
-			 Serial.print(" then keep ative");
+	uint32_t interval;
+	
+	if(mode == MODE_MOVE_OFF || mode == MODE_MOVE_ON){
+		
+		traj_step_num = traj_calc (traj_ctrl.lastx, traj_ctrl.lasty, traj_ctrl.lastz, traj_ctrl.x, traj_ctrl.y, traj_ctrl.z );
+		
+		interval = traj_calc_speed (traj_ctrl.s, traj_ctrl.lastx, traj_ctrl.lasty, traj_ctrl.lastz, traj_ctrl.x, traj_ctrl.y, traj_ctrl.z );
+				
+		setTimer5 (interval);
+		
+		traj_step_idx = 0;
+		array_phase_idx = 0;
+		
+		traj_ctrl.lastx = traj_ctrl.x;
+		traj_ctrl.lasty = traj_ctrl.y;
+		traj_ctrl.lastz = traj_ctrl.z;
+		
+		enableTimer5 ();
+		enableTimer4 ();
+	}
+	else if(mode == MODE_ON) {
+		
+		traj_calc_step (0, traj_ctrl.d, traj_ctrl.x, traj_ctrl.y, traj_ctrl.z );
+		
+		traj_step_idx = 0;
+		traj_step_num = 1;
+		array_phase_idx = 0;
+		
+		traj_ctrl.lastx = traj_ctrl.x;
+		traj_ctrl.lasty = traj_ctrl.y;
+		traj_ctrl.lastz = traj_ctrl.z;
+		
+		
+		disableTimer5 ();
+		enableTimer4 ();
+	}
+	else if(mode == MODE_FLAT) {
+		
+		traj_calc_step (0, traj_ctrl.d, 0, 0, 0 );
+		
+		traj_step_idx = 0;
+		traj_step_num = 1;
+		array_phase_idx = 0;
+		
+		traj_ctrl.x = 0;
+		traj_ctrl.y = 0;
+		traj_ctrl.z = 0;
+		traj_ctrl.lastx = traj_ctrl.x;
+		traj_ctrl.lasty = traj_ctrl.y;
+		traj_ctrl.lastz = traj_ctrl.z;
+		
+		disableTimer5 ();
+		enableTimer4 ();
+	}
+	else if(mode == MODE_OFF) {
+		
+		disableTimer5 ();
+		disableTimer4 ();
+	}
+	
+} //input_execute
+
+/*
+
+*/
+void input_print () {
+#ifdef INPUT_ECHO
+	
+	if(mode == MODE_MOVE_OFF || mode == MODE_MOVE_ON){
+		Serial.print(F("Move from (")); Serial.print(traj_ctrl.lastx); Serial.print(F(",")); Serial.print(traj_ctrl.lasty); Serial.print(F(",")); Serial.print(traj_ctrl.lastz); Serial.print(F(") to (")); Serial.print(traj_ctrl.x); Serial.print(F(",")); Serial.print(traj_ctrl.y); Serial.print(F(",")); Serial.print(traj_ctrl.z); Serial.print(F(") at ")); Serial.print(traj_ctrl.s); Serial.print(F("mm/s with duty cycle of ")); Serial.print(traj_ctrl.d);
+		if(mode == MODE_MOVE_ON) {
+			 Serial.print(F(" then keep active"));
 		}
 		else {
-			 Serial.print(" then deactivate");
+			 Serial.print(F(" then deactivate"));
 		}
 	}
-	else if(state.isActiveStatic) {
-		Serial.print("Activate at ("); Serial.print(state.x); Serial.print(","); Serial.print(state.y); Serial.print(","); Serial.print(state.z); Serial.print(") with duty cycle of "); Serial.print(state.d);
+	else if(mode == MODE_ON) {
+		Serial.print(F("Activate at (")); Serial.print(traj_ctrl.x); Serial.print(F(",")); Serial.print(traj_ctrl.y); Serial.print(F(",")); Serial.print(traj_ctrl.z); Serial.print(F(") with duty cycle of ")); Serial.print(traj_ctrl.d);
 	}
-	if(state.isFlat) {
-		Serial.print("Activate flat mode with duty cycle of "); Serial.print(state.d);
+	else if(mode == MODE_FLAT) {
+		Serial.print(F("Activate flat mode with duty cycle of ")); Serial.print(traj_ctrl.d);
 	}
-	if(state.isStop) {
-		Serial.print("Deactivate");
+	else if(mode == MODE_OFF) {
+		Serial.print(F("Deactivate"));
 	}
-	Serial.print("\n");
-	
-}
+	Serial.print(F("\n"));
 
-void trand_array_load ( t_transd_array *transd_array ){
+#endif
+} //input_print
+
+/*
+
+*/
+void transd_array_load ( t_transd_array *transd_array ){
 	
 	uint8_t x, y;
 	
 	for(x = 0; x < ARRAY_SIZE_X; x++){
 		for(y = 0; y < ARRAY_SIZE_Y; y++){
 
-			transd_array_set( transd_array, x, y, ARRAY_CALIBRATION[x][y][0], ARRAY_CALIBRATION[x][y][1] );
+			transd_array_set( transd_array, x, y, pgm_read_byte_near(ARRAY_CALIBRATION + x*ARRAY_SIZE_Y + y), pgm_read_byte_near(ARRAY_CALIBRATION + x*ARRAY_SIZE_Y + y + 1) );
 		}
 	}
-}
-
-
-
-
-
-
-
-
+} //transd_array_load

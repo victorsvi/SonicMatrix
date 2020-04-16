@@ -6,8 +6,6 @@
 	extern "C" {
 #endif
 
-#include <stdint.h>
-
 void setTimer4 ();
 void enableTimer4 ();
 void disableTimer4 ();
