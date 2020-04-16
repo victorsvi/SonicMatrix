@@ -37,13 +37,15 @@
 #include "Timer5.h"
 #include "Math.h"
 
+//#define INPUT_ECHO
+
 #define TRANS_DIAMETER 16 //diameter of the element in millimeters (total length of the array cant exceed 255 millimeters)
 #define TRANS_SEPARATION 2 //distance between two consecutive elements in the array in millimeters (total length of the array cant exceed 255 millimeters)
 #define ARRAY_SIZE_X 8 //number of transducers of the array in the x dimension
 #define ARRAY_SIZE_Y 8 //number of transducers of the array in the y dimension
 #define ARRAY_PHASERES 10 //number of transducers of the array in the y dimension (max 16 bits)
 #define TRAJ_RES 1 //trajectory maximum resolution in millimeters
-#define TRAJ_MAXSTEPS 255 //maximum steps of the trajectory (max 255)
+#define TRAJ_MAXSTEPS 64 //maximum steps of the trajectory (max 255)
 
 /* MACROS */
 
@@ -69,7 +71,7 @@ void transd_array_load ( t_transd_array *transd_array );
 
 /* DATA DEFINITION */
 
-enum e_mode = {	MODE_OFF,		// turned off, signal is held low
+enum e_mode {	MODE_OFF,		// turned off, signal is held low
 				MODE_ON, 		// turned on, with static focal point
 				MODE_MOVE_OFF, 	// move to focal point to target then tuns off
 				MODE_MOVE_ON, 	// move to focal point to target and keeps on
@@ -88,7 +90,7 @@ struct s_pin {
 
 /* GLOBAL VARIABLES */
 
-const uint8_t ARRAY_CALIBRATION[ARRAY_SIZE_X][ARRAY_SIZE_Y][2] = {
+const uint8_t ARRAY_CALIBRATION[ARRAY_SIZE_X][ARRAY_SIZE_Y][2] PROGMEM = {
 	//pin numer, phase compensation
 	4 , 0,//x0, y0
 	6 , 0,//x0, y1
@@ -265,7 +267,7 @@ void setup () {
 		DEBUG_MSG("The transducer array pointer is null")
 		#endif
 	}
-	trand_array_load (transd_array);
+	transd_array_load (transd_array);
 	
 	mode = MODE_OFF;
 } //setup
@@ -289,18 +291,18 @@ ISR( TIMER4_COMPA_vect ) {
 	uint8_t step_idx = traj_step_idx;
 	
 	// Just copy the port state from the buffer
-	PORTA = traj_port_buffer[step_idx][array_phase][0];
-	PORTB = traj_port_buffer[step_idx][array_phase][1];
-	PORTC = traj_port_buffer[step_idx][array_phase][2];
-	PORTD = traj_port_buffer[step_idx][array_phase][3];
+	PORTA = traj_port_buffer[step_idx][phase_idx][0];
+	PORTB = traj_port_buffer[step_idx][phase_idx][1];
+	PORTC = traj_port_buffer[step_idx][phase_idx][2];
+	PORTD = traj_port_buffer[step_idx][phase_idx][3];
 	//PORTE = 0;
-	PORTF = traj_port_buffer[step_idx][array_phase][4];
-	PORTG = traj_port_buffer[step_idx][array_phase][5];
-	PORTH = traj_port_buffer[step_idx][array_phase][6];
+	PORTF = traj_port_buffer[step_idx][phase_idx][4];
+	PORTG = traj_port_buffer[step_idx][phase_idx][5];
+	PORTH = traj_port_buffer[step_idx][phase_idx][6];
 	//PORTI = 0;
-	PORTJ = traj_port_buffer[step_idx][array_phase][7];
-	PORTK = traj_port_buffer[step_idx][array_phase][8];
-	PORTL = traj_port_buffer[step_idx][array_phase][9];
+	PORTJ = traj_port_buffer[step_idx][phase_idx][7];
+	PORTK = traj_port_buffer[step_idx][phase_idx][8];
+	PORTL = traj_port_buffer[step_idx][phase_idx][9];
 	
 	phase_idx < ARRAY_PHASERES ? array_phase_idx++ : array_phase_idx = 0;
 
@@ -384,7 +386,7 @@ uint8_t traj_calc (const uint8_t from_x, const uint8_t from_y, const uint8_t fro
 */
 void traj_calc_step (uint8_t step_idx, const uint8_t duty_cycle, const uint8_t focus_x, const uint8_t focus_y, const uint8_t focus_z ) {
 	
-	uint8_t x, y, phase_idx, bit, pin, port_idx;
+	uint8_t x, y, phase_idx, bit, pin, port_idx = 0;
 	
 	for(phase_idx = 0; phase_idx < ARRAY_PHASERES; phase_idx++){
 		traj_port_buffer[step_idx][phase_idx][0] = 0x00; //PORTA
@@ -496,7 +498,7 @@ uint8_t traj_solve_z (uint8_t x, uint8_t x1, uint8_t z1, uint8_t x2, uint8_t z2 
 */
 uint32_t traj_calc_speed (const uint8_t s, const uint8_t from_x, const uint8_t from_y, const uint8_t from_z, const uint8_t to_x, const uint8_t to_y, const uint8_t to_z ){
 	
-	uint32_t distance, speed_axys;
+	uint32_t distance, speed_axys, interval;
 	int8_t Dx, Dy, Dz;
 	
 	Dx = to_x - from_x;
@@ -689,27 +691,29 @@ void input_execute (){
 
 */
 void input_print () {
+#ifdef INPUT_ECHO
 	
 	if(mode == MODE_MOVE_OFF || mode == MODE_MOVE_ON){
-		Serial.print("Move from ("); Serial.print(traj_ctrl.lastx); Serial.print(","); Serial.print(traj_ctrl.lasty); Serial.print(","); Serial.print(traj_ctrl.lastz); Serial.print(") to ("); Serial.print(traj_ctrl.x); Serial.print(","); Serial.print(traj_ctrl.y); Serial.print(","); Serial.print(traj_ctrl.z); Serial.print(") at "); Serial.print(traj_ctrl.s); Serial.print("mm/s with duty cycle of "); Serial.print(traj_ctrl.d);
-		if(mode = MODE_MOVE_ON) {
-			 Serial.print(" then keep active");
+		Serial.print(F("Move from (")); Serial.print(traj_ctrl.lastx); Serial.print(F(",")); Serial.print(traj_ctrl.lasty); Serial.print(F(",")); Serial.print(traj_ctrl.lastz); Serial.print(F(") to (")); Serial.print(traj_ctrl.x); Serial.print(F(",")); Serial.print(traj_ctrl.y); Serial.print(F(",")); Serial.print(traj_ctrl.z); Serial.print(F(") at ")); Serial.print(traj_ctrl.s); Serial.print(F("mm/s with duty cycle of ")); Serial.print(traj_ctrl.d);
+		if(mode == MODE_MOVE_ON) {
+			 Serial.print(F(" then keep active"));
 		}
 		else {
-			 Serial.print(" then deactivate");
+			 Serial.print(F(" then deactivate"));
 		}
 	}
 	else if(mode == MODE_ON) {
-		Serial.print("Activate at ("); Serial.print(traj_ctrl.x); Serial.print(","); Serial.print(traj_ctrl.y); Serial.print(","); Serial.print(traj_ctrl.z); Serial.print(") with duty cycle of "); Serial.print(traj_ctrl.d);
+		Serial.print(F("Activate at (")); Serial.print(traj_ctrl.x); Serial.print(F(",")); Serial.print(traj_ctrl.y); Serial.print(F(",")); Serial.print(traj_ctrl.z); Serial.print(F(") with duty cycle of ")); Serial.print(traj_ctrl.d);
 	}
 	else if(mode == MODE_FLAT) {
-		Serial.print("Activate flat mode with duty cycle of "); Serial.print(traj_ctrl.d);
+		Serial.print(F("Activate flat mode with duty cycle of ")); Serial.print(traj_ctrl.d);
 	}
 	else if(mode == MODE_OFF) {
-		Serial.print("Deactivate");
+		Serial.print(F("Deactivate"));
 	}
-	Serial.print("\n");
-	
+	Serial.print(F("\n"));
+
+#endif
 } //input_print
 
 /*
@@ -722,7 +726,7 @@ void transd_array_load ( t_transd_array *transd_array ){
 	for(x = 0; x < ARRAY_SIZE_X; x++){
 		for(y = 0; y < ARRAY_SIZE_Y; y++){
 
-			transd_array_set( transd_array, x, y, ARRAY_CALIBRATION[x][y][0], ARRAY_CALIBRATION[x][y][1] );
+			transd_array_set( transd_array, x, y, pgm_read_byte_near(ARRAY_CALIBRATION + x*ARRAY_SIZE_Y + y), pgm_read_byte_near(ARRAY_CALIBRATION + x*ARRAY_SIZE_Y + y + 1) );
 		}
 	}
 } //transd_array_load

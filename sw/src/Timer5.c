@@ -2,7 +2,7 @@
 #include <Arduino.h>
 #include "Timer5.h"
 
-void setTimer5 (uint32_t interval); {
+void setTimer5 (uint32_t interval) {
 
 	/*
 				
