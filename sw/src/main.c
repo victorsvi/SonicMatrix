@@ -39,11 +39,13 @@
 
 //#define INPUT_ECHO
 
+/** ESSES DEFINES VÃO PARA O ULTRASONIC.H
 #define TRANS_DIAMETER 16 //diameter of the element in millimeters (total length of the array cant exceed 255 millimeters)
 #define TRANS_SEPARATION 2 //distance between two consecutive elements in the array in millimeters (total length of the array cant exceed 255 millimeters)
 #define ARRAY_SIZE_X 8 //number of transducers of the array in the x dimension
 #define ARRAY_SIZE_Y 8 //number of transducers of the array in the y dimension
 #define ARRAY_PHASERES 10 //number of transducers of the array in the y dimension (max 16 bits)
+*/
 #define TRAJ_RES 1 //trajectory maximum resolution in millimeters
 #define TRAJ_MAXSTEPS 64 //maximum steps of the trajectory (max 255)
 

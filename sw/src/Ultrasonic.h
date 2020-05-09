@@ -16,10 +16,11 @@
 typedef struct s_transd { 
 	uint8_t port_pin; //pin on which the transducer is connected.
 	uint8_t phase_comp; //physical phase delay of the transducer. Use to compensate for manufacturing imperfections of the transducers.
-	uint8_t x; //x position of the center of the transducer in milimeters.
-	uint8_t y; //y position of the center of the transducer in milimeters.
-	uint8_t phase; //current discrete phase delay of the transducer. It ranges from 0 to 255 and equates to 0 to 2pi.
-	uint8_t duty_cycle; //current discrete duty cycle of the transducer. It ranges from 0 to 255 and equates to 0% to 100%.
+	///PODE CALCULAR QUANDO PRECISAR (NA transd_calcfocus) uint8_t x; //x position of the center of the transducer in milimeters.
+	///PODE CALCULAR QUANDO PRECISAR (NA transd_calcfocus) uint8_t y; //y position of the center of the transducer in milimeters.
+	///USADO SO PRA DEBUG uint8_t phase; //current discrete phase delay of the transducer. It ranges from 0 to 255 and equates to 0 to 2pi.
+	///USADO SO PRA DEBUG uint8_t duty_cycle; //current discrete duty cycle of the transducer. It ranges from 0 to 255 and equates to 0% to 100%.
+	///VAI RETORNAR AQUI O PATTERN PRA UM PASSO
 	uint16_t pattern; //current pattern thar represents the wave format. Each bit is a step of the waveform. The number of bits is limite by the phase_res. 
 } t_transd;
 
@@ -29,7 +30,7 @@ typedef struct s_transd_array {
 	uint8_t size_y; //number of transducers in the y axys
 	uint8_t elem_diameter; //diameter of each transducer in milimeters
 	uint8_t elem_separation; //separation between transducers in milimeters
-	t_transd *transd_ptr; //pointer to the transducer array
+	///TROCAR POR VETOR t_transd *transd_ptr; //pointer to the transducer array
 	uint8_t phase_res; //Number of steps that a wave period is divided. Increase the phase_res to obtain a more accurate wavefrom. Decrease the phase_res if the uC can't update the outputs fast enough to support the 40kHz frequency.
 } t_transd_array;
 

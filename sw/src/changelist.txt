@@ -1,0 +1,37 @@
+changelist
+
+objetivo
+	reduzir consumo de memoria
+	evitar uso de alocação dinamica pra poder estimar melhor o consumo de memória em tempo de compilação.
+
+cuidados
+	a estimativa de memória cobre apenas variáveis globais.
+	a memória restante deve ser suficiente para
+		variáveis dinâmicas (malloc)
+		variáveis locais
+		stack
+		estado antes da ISR
+	tentar remover Serial?
+	Na ultrasonic, tentar colocar as funções privadas como inline, pra reduzir o stack.
+
+sai do main.c pro ultrasonic.h 
+	#define TRANS_DIAMETER 16 //diameter of the element in millimeters (total length of the array cant exceed 255 millimeters)
+	#define TRANS_SEPARATION 2 //distance between two consecutive elements in the array in millimeters (total length of the array cant exceed 255 millimeters)
+	#define ARRAY_SIZE_X 8 //number of transducers of the array in the x dimension
+	#define ARRAY_SIZE_Y 8 //number of transducers of the array in the y dimension
+	#define ARRAY_PHASERES 10 //number of transducers of the array in the y dimension (max 16 bits)
+	
+struct s_transd perde os campos. o x e y devem ser calculados novamente onde são usados. phase e duty_cycle podem ser usados no dump de debug talvez
+	uint8_t x; //x position of the center of the transducer in milimeters.
+	uint8_t y; //y position of the center of the transducer in milimeters.
+	uint8_t phase; //current discrete phase delay of the transducer. It ranges from 0 to 255 and equates to 0 to 2pi.
+	uint8_t duty_cycle; //current discrete duty cycle of the transducer. It ranges from 0 to 255 and equates to 0% to 100%.
+	
+struct s_transd_array troca a list por array
+	t_transd *transd_ptr; //pointer to the transducer array
+	
+const uint8_t ARRAY_CALIBRATION[ARRAY_SIZE_X][ARRAY_SIZE_Y][2] PROGMEM está na flash, então não precisa mexer
+
+const struct s_pin PINS[70] da pra colocar na progmem se descobrir como referenciar o banco --o banco não tem muito como melhorar pq os pinos de cada banco nao sao sequenciais. As máscaras tem como calcular em tempo real se usar um int dividido em grupos de 3 bits pra armazenar a posição. mas são só 140 bytes, não compensa o esforço
+
+uint8_t traj_port_buffer[TRAJ_MAXSTEPS][ARRAY_PHASERES][10]; acho que nao tem como melhorar também já que preciso de um "pattern" para cada step da fase. é o custo pra poder executar a 400kHz :(
