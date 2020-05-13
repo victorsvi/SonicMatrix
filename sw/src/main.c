@@ -39,7 +39,7 @@
 
 //#define INPUT_ECHO
 
-/** ESSES DEFINES VÃO PARA O ULTRASONIC.H
+/*
 #define TRANS_DIAMETER 16 //diameter of the element in millimeters (total length of the array cant exceed 255 millimeters)
 #define TRANS_SEPARATION 2 //distance between two consecutive elements in the array in millimeters (total length of the array cant exceed 255 millimeters)
 #define ARRAY_SIZE_X 8 //number of transducers of the array in the x dimension
@@ -67,9 +67,11 @@ uint32_t traj_calc_speed (const uint8_t s, const uint8_t from_x, const uint8_t f
 uint8_t input_parse ();
 void input_parse_token (char *token);
 void input_execute ();
+#ifdef INPUT_ECHO
 void input_print ();
+#endif
 
-void transd_array_load ( t_transd_array *transd_array );
+void transd_array_load ( /*t_transd_array *transd_array*/ );
 
 /* DATA DEFINITION */
 
@@ -239,7 +241,7 @@ volatile uint8_t traj_step_idx = 0, traj_step_num = 0;
 volatile uint8_t array_phase_idx = 0;
 enum e_mode mode;
 
-t_transd_array *transd_array = NULL;
+/*t_transd_array *transd_array = NULL;*/
 
 uint8_t traj_port_buffer[TRAJ_MAXSTEPS][ARRAY_PHASERES][10]; //buffers the ports state for each coordinate (x,y,z) of the movement, for each slice of the wave period, for each PORT
 
@@ -263,13 +265,13 @@ void setup () {
 	
 	setTimer4();
 	
-	transd_array = transd_array_init( ARRAY_SIZE_X, ARRAY_SIZE_Y, TRANS_DIAMETER, TRANS_SEPARATION, ARRAY_PHASERES );
+	/*transd_array = transd_array_init( ARRAY_SIZE_X, ARRAY_SIZE_Y, TRANS_DIAMETER, TRANS_SEPARATION, ARRAY_PHASERES );
 	if( transd_array == NULL ) {
 		#ifdef DEBUG
 		DEBUG_MSG("The transducer array pointer is null")
 		#endif
-	}
-	transd_array_load (transd_array);
+	}*/
+	transd_array_load (/*transd_array*/);
 	
 	mode = MODE_OFF;
 } //setup
@@ -277,7 +279,9 @@ void setup () {
 void loop () {
 	
 	if(input_parse()) {
+#ifdef INPUT_ECHO
 		input_print();
+#endif
 		input_execute();
 	}
 	
@@ -404,10 +408,10 @@ void traj_calc_step (uint8_t step_idx, const uint8_t duty_cycle, const uint8_t f
 	}
 	
 	if(mode != MODE_FLAT) {
-		transd_array_calcfocus( transd_array, duty_cycle, focus_x, focus_y, focus_z );
+		transd_array_calcfocus( /*transd_array,*/ duty_cycle, focus_x, focus_y, focus_z );
 	}
 	else {
-		transd_array_calcflat( transd_array, duty_cycle );
+		transd_array_calcflat( /*transd_array,*/ duty_cycle );
 	}
 	
 	
@@ -415,7 +419,7 @@ void traj_calc_step (uint8_t step_idx, const uint8_t duty_cycle, const uint8_t f
 		for(y = 0; y < ARRAY_SIZE_Y; y++){
 			
 			//gets the pin that the transducer is connected to
-			pin = (transd_array->transd_ptr + x * ARRAY_SIZE_Y + y)->port_pin;
+			pin = transd_array[x][y].port_pin;
 			
 			if(PINS[pin].bank_ptr == &PORTA) port_idx = 0;
 			if(PINS[pin].bank_ptr == &PORTB) port_idx = 1;
@@ -431,7 +435,7 @@ void traj_calc_step (uint8_t step_idx, const uint8_t duty_cycle, const uint8_t f
 			for(phase_idx = 0; phase_idx < ARRAY_PHASERES; phase_idx++){
 			
 				//access the pattern and gets the value for the bit representing the current step
-				bit = (transd_array->transd_ptr + x * ARRAY_SIZE_Y + y)->pattern & (1 << phase_idx);
+				bit = transd_array[x][y].pattern & (1 << phase_idx);
 				
 				//updates only the current pin
 				if(bit) {
@@ -456,7 +460,7 @@ uint8_t traj_solve_y (uint8_t x, uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2 
 	uint8_t y;
 	
 	//using 2 decimal places fixed point (force cast before multiplication)
-	 _x = int32_t( x) * 100; 
+	_x  = int32_t( x) * 100; 
 	_x1 = int32_t(x1) * 100; 
 	_y1 = int32_t(y1) * 100; 
 	_x2 = int32_t(x2) * 100; 
@@ -689,11 +693,11 @@ void input_execute (){
 	
 } //input_execute
 
+#ifdef INPUT_ECHO
 /*
 
 */
 void input_print () {
-#ifdef INPUT_ECHO
 	
 	if(mode == MODE_MOVE_OFF || mode == MODE_MOVE_ON){
 		Serial.print(F("Move from (")); Serial.print(traj_ctrl.lastx); Serial.print(F(",")); Serial.print(traj_ctrl.lasty); Serial.print(F(",")); Serial.print(traj_ctrl.lastz); Serial.print(F(") to (")); Serial.print(traj_ctrl.x); Serial.print(F(",")); Serial.print(traj_ctrl.y); Serial.print(F(",")); Serial.print(traj_ctrl.z); Serial.print(F(") at ")); Serial.print(traj_ctrl.s); Serial.print(F("mm/s with duty cycle of ")); Serial.print(traj_ctrl.d);
@@ -715,20 +719,20 @@ void input_print () {
 	}
 	Serial.print(F("\n"));
 
-#endif
 } //input_print
+#endif
 
 /*
 
 */
-void transd_array_load ( t_transd_array *transd_array ){
+void transd_array_load ( /*t_transd_array *transd_array(*/ ){
 	
 	uint8_t x, y;
 	
 	for(x = 0; x < ARRAY_SIZE_X; x++){
 		for(y = 0; y < ARRAY_SIZE_Y; y++){
 
-			transd_array_set( transd_array, x, y, pgm_read_byte_near(ARRAY_CALIBRATION + x*ARRAY_SIZE_Y + y), pgm_read_byte_near(ARRAY_CALIBRATION + x*ARRAY_SIZE_Y + y + 1) );
+			transd_array_set( /*transd_array,*/ x, y, pgm_read_byte_near(ARRAY_CALIBRATION + x*ARRAY_SIZE_Y + y), pgm_read_byte_near(ARRAY_CALIBRATION + x*ARRAY_SIZE_Y + y + 1) );
 		}
 	}
 } //transd_array_load
