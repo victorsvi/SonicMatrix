@@ -302,6 +302,10 @@ void setup () {
 #endif
 
 	mode = MODE_OFF;
+	
+#ifdef DEBUG_TIMER
+	debug_timer ();
+#endif
 } //setup
 
 void loop () {
@@ -996,6 +1000,6 @@ void debug_timer () {
 	mode = MODE_ON;
 	enableTimer4();
 	
-	Serial.println(F("Output signal ready..."));
+	Serial.println(F("Output signal is set up..."));
 } //debug_timer
 #endif
