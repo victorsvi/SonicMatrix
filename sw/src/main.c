@@ -1,21 +1,13 @@
-
-//pinToBank() //converte pino para porta
-//criar um timer para gerar o sinal de 40khz. com resolução de 1/10, o timer deve ter frequência de 400kHz (2.5us) (criar um lib para operar o timer?)
-//algum jeito de efetuar o cálculo do delay mais rápido? SIM! posso fazer, para uma coordenada z, preenher uma matriz com o delay vs distância do foco. Depois, para cada transdutor, colocar o valor relativo à distância do foco em x, y. (será que é mas rápido? irá ter que calcular a d = (dx^2 + dy^2)^1/2
-//algum jeito de atribuir as portas de forma rápida?
-//interpretar a serial de forma assíncrona? implementar de forma que a geração do sinal execute com prioridade e a interpretação da entrada seja feita "quando sobrar ciclos" (software interrupt?)
-
-
 /*
 	PROGRAMAS DE TESTE
 	
 	Que códigos precisam ser criados para testar os conceitos uilizados?
 	
-	# Geração de sinal 40kHz * 8 (resolução) (teste do timer) (checar jitter). Fazer também em 64 canais para verificar o desempenho.
-	# Interpretação da entrada serial
+	# DONE Geração de sinal 40kHz * 8 (resolução) (teste do timer) (checar jitter). Fazer também em 64 canais para verificar o desempenho.
+	# DONE Interpretação da entrada serial
 	# Dump do cálculo das fases
-	# Dump das portas
-	# Para testar o mapeamento dos pinos (exibir a coordenada x, y e o numero do pino em display, enquanto gera um sinal no pino. a entrada serial indica qual coordenada checar)
+	# DONE Dump das portas
+	# DONE Para testar o mapeamento dos pinos (exibir a coordenada x, y e o numero do pino em display, enquanto gera um sinal no pino. a entrada serial indica qual coordenada checar)
 	# Comparar a sqrt() do arduino com a de inteiro (custom), calculando a raiz de vários números e contando o tempo para a conclusão.
 */
 
@@ -37,13 +29,20 @@
 #include "Timer5.h"
 #include "Math.h"
 
-//#define INPUT_ECHO
+//#define DEBUG_PINS 2000 //DELAY BETWEEN PINS IN MS //coloca saída nível alto em cada pino sequencialmente (a partir do 6). Testa a parte de manipular as portas pelos registradores
+//#define DEBUG_MAP 2000 //DELAY BETWEEN PINS IN MS //coloca saída nível alto no pino de cada elemento, na ordem da matriz {(0,0),(0,1),(0,2),(1,0),(1,1),(1,2),...}. Testa o mapeamento de pinos
+//#define DEBUG_INPUT //retorna a interpretação da entrada. Testa o parse dos comandos
+//#define DEBUG_PATTERN //retorna o pattern de cada elemento quando ele for calculado. Testa a geração dos padrões
+//#define DEBUG_TRAJ //retorna as coordenadas dos pontos da trajetória e os dados de velocidade
+//#define DEBUG_TIMER 0xAAAA //PATTERN MASK 0xAAAA = #_#_#_#_#_#_#_#_ //configura a saída de todos os elementos com o padrão especificado. Testa a capacidade de gerar o sinal de saída para todos os canais.
 
+/*
 #define TRANS_DIAMETER 16 //diameter of the element in millimeters (total length of the array cant exceed 255 millimeters)
 #define TRANS_SEPARATION 2 //distance between two consecutive elements in the array in millimeters (total length of the array cant exceed 255 millimeters)
 #define ARRAY_SIZE_X 8 //number of transducers of the array in the x dimension
 #define ARRAY_SIZE_Y 8 //number of transducers of the array in the y dimension
 #define ARRAY_PHASERES 10 //number of transducers of the array in the y dimension (max 16 bits)
+*/
 #define TRAJ_RES 1 //trajectory maximum resolution in millimeters
 #define TRAJ_MAXSTEPS 64 //maximum steps of the trajectory (max 255)
 
@@ -65,9 +64,28 @@ uint32_t traj_calc_speed (const uint8_t s, const uint8_t from_x, const uint8_t f
 uint8_t input_parse ();
 void input_parse_token (char *token);
 void input_execute ();
-void input_print ();
+#ifdef DEBUG_PINS
+void debug_pins ();
+#endif
+#ifdef DEBUG_MAP
+void debug_map ();
+#endif
+#ifdef DEBUG_INPUT
+void debug_input ();
+#endif
+#ifdef DEBUG_PATTERN
+void debug_pattern ();
+#endif
+#ifdef DEBUG_TRAJ
+void debug_traj_header ();
+void debug_traj_step (const uint8_t step_idx, const uint8_t focus_x, const uint8_t focus_y);
+void debug_traj_speed (const uint8_t s, const uint8_t from_x, const uint8_t from_y, const uint8_t from_z, const uint8_t to_x, const uint8_t to_y, const uint8_t to_z, const int8_t Dx, const int8_t Dy, const int8_t Dz, const uint32_t distance, const uint32_t speed_axys, const uint32_t interval);
+#endif
+#ifdef DEBUG_TIMER
+void debug_timer ();
+#endif
 
-void transd_array_load ( t_transd_array *transd_array );
+void transd_array_load ( /*t_transd_array *transd_array*/ );
 
 /* DATA DEFINITION */
 
@@ -92,8 +110,15 @@ struct s_pin {
 
 const uint8_t ARRAY_CALIBRATION[ARRAY_SIZE_X][ARRAY_SIZE_Y][2] PROGMEM = {
 	//pin numer, phase compensation
-	4 , 0,//x0, y0
-	6 , 0,//x0, y1
+	//x0, y0,
+	//x0, y1,
+	//0 , 0,
+	//1 , 0,
+	//2 , 0,
+	//3 , 0,
+	//4 , 0,
+	//5 , 0,
+	6 , 0,
 	7 , 0,
 	8 , 0,
 	9 , 0,
@@ -141,6 +166,7 @@ const uint8_t ARRAY_CALIBRATION[ARRAY_SIZE_X][ARRAY_SIZE_Y][2] PROGMEM = {
 	51, 0,
 	52, 0,
 	53, 0,
+	54, 0,
 	55, 0,
 	56, 0,
 	57, 0,
@@ -237,7 +263,7 @@ volatile uint8_t traj_step_idx = 0, traj_step_num = 0;
 volatile uint8_t array_phase_idx = 0;
 enum e_mode mode;
 
-t_transd_array *transd_array = NULL;
+/*t_transd_array *transd_array = NULL;*/
 
 uint8_t traj_port_buffer[TRAJ_MAXSTEPS][ARRAY_PHASERES][10]; //buffers the ports state for each coordinate (x,y,z) of the movement, for each slice of the wave period, for each PORT
 
@@ -259,23 +285,37 @@ void setup () {
 	DDRK = 0xFF;
 	DDRL = 0xFF;
 	
+#ifdef DEBUG_PINS
+	debug_pins ();
+#endif
+	
 	setTimer4();
 	
-	transd_array = transd_array_init( ARRAY_SIZE_X, ARRAY_SIZE_Y, TRANS_DIAMETER, TRANS_SEPARATION, ARRAY_PHASERES );
+	/*transd_array = transd_array_init( ARRAY_SIZE_X, ARRAY_SIZE_Y, TRANS_DIAMETER, TRANS_SEPARATION, ARRAY_PHASERES );
 	if( transd_array == NULL ) {
 		#ifdef DEBUG
 		DEBUG_MSG("The transducer array pointer is null")
 		#endif
-	}
-	transd_array_load (transd_array);
-	
+	}*/
+	transd_array_load (/*transd_array*/);
+
+#ifdef DEBUG_MAP
+	debug_map ();
+#endif
+
 	mode = MODE_OFF;
+	
+#ifdef DEBUG_TIMER
+	debug_timer ();
+#endif
 } //setup
 
 void loop () {
 	
 	if(input_parse()) {
-		input_print();
+#ifdef DEBUG_INPUT
+		debug_input();
+#endif
 		input_execute();
 	}
 	
@@ -331,6 +371,10 @@ uint8_t traj_calc (const uint8_t from_x, const uint8_t from_y, const uint8_t fro
 	uint8_t traj_x, traj_y, traj_z, step_idx;
 
 	step_idx = 0;
+	
+#ifdef DEBUG_TRAJ
+	debug_traj_header ();
+#endif
 	
 	if( from_x != to_x ) { /* if the trajectory isn't perperdicular to the x axys */
 		
@@ -388,7 +432,7 @@ void traj_calc_step (uint8_t step_idx, const uint8_t duty_cycle, const uint8_t f
 	
 	uint8_t x, y, phase_idx, bit, pin, port_idx = 0;
 	
-	for(phase_idx = 0; phase_idx < ARRAY_PHASERES; phase_idx++){
+	for(phase_idx = 0; phase_idx < ARRAY_PHASERES; phase_idx++) {
 		traj_port_buffer[step_idx][phase_idx][0] = 0x00; //PORTA
 		traj_port_buffer[step_idx][phase_idx][1] = 0x00; //PORTB
 		traj_port_buffer[step_idx][phase_idx][2] = 0x00; //PORTC
@@ -402,18 +446,17 @@ void traj_calc_step (uint8_t step_idx, const uint8_t duty_cycle, const uint8_t f
 	}
 	
 	if(mode != MODE_FLAT) {
-		transd_array_calcfocus( transd_array, duty_cycle, focus_x, focus_y, focus_z );
+		transd_array_calcfocus( /*transd_array,*/ duty_cycle, focus_x, focus_y, focus_z );
 	}
 	else {
-		transd_array_calcflat( transd_array, duty_cycle );
+		transd_array_calcflat( /*transd_array,*/ duty_cycle );
 	}
-	
-	
+		
 	for(x = 0; x < ARRAY_SIZE_X; x++){
 		for(y = 0; y < ARRAY_SIZE_Y; y++){
 			
 			//gets the pin that the transducer is connected to
-			pin = (transd_array->transd_ptr + x * ARRAY_SIZE_Y + y)->port_pin;
+			pin = transd_array[x][y].port_pin;
 			
 			if(PINS[pin].bank_ptr == &PORTA) port_idx = 0;
 			if(PINS[pin].bank_ptr == &PORTB) port_idx = 1;
@@ -429,7 +472,7 @@ void traj_calc_step (uint8_t step_idx, const uint8_t duty_cycle, const uint8_t f
 			for(phase_idx = 0; phase_idx < ARRAY_PHASERES; phase_idx++){
 			
 				//access the pattern and gets the value for the bit representing the current step
-				bit = (transd_array->transd_ptr + x * ARRAY_SIZE_Y + y)->pattern & (1 << phase_idx);
+				bit = transd_array[x][y].pattern & (1 << phase_idx);
 				
 				//updates only the current pin
 				if(bit) {
@@ -443,6 +486,15 @@ void traj_calc_step (uint8_t step_idx, const uint8_t duty_cycle, const uint8_t f
 			}
 		}
 	}
+	
+#ifdef DEBUG_TRAJ
+	debug_traj_step (step_idx, focus_x, focus_y);
+#endif
+	
+#ifdef DEBUG_PATTERN
+	debug_pattern ();
+#endif
+
 } //traj_calc_step
 
 /*
@@ -454,7 +506,7 @@ uint8_t traj_solve_y (uint8_t x, uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2 
 	uint8_t y;
 	
 	//using 2 decimal places fixed point (force cast before multiplication)
-	 _x = int32_t( x) * 100; 
+	_x  = int32_t( x) * 100; 
 	_x1 = int32_t(x1) * 100; 
 	_y1 = int32_t(y1) * 100; 
 	_x2 = int32_t(x2) * 100; 
@@ -524,6 +576,11 @@ uint32_t traj_calc_speed (const uint8_t s, const uint8_t from_x, const uint8_t f
 	}
 	
 	interval = (TRAJ_RES * 10E6) / speed_axys;
+	
+
+#ifdef DEBUG_TRAJ
+	debug_traj_speed (s, from_x, from_y, from_z, to_x, to_y, to_z, Dx, Dy, Dz, distance, speed_axys, interval);
+#endif
 	
 	return interval;
 }
@@ -690,8 +747,160 @@ void input_execute (){
 /*
 
 */
-void input_print () {
-#ifdef INPUT_ECHO
+void transd_array_load ( /*t_transd_array *transd_array(*/ ){
+	
+	uint8_t x, y;
+	
+	for(x = 0; x < ARRAY_SIZE_X; x++){
+		for(y = 0; y < ARRAY_SIZE_Y; y++){
+
+			transd_array_set( /*transd_array,*/ x, y, pgm_read_byte_near(ARRAY_CALIBRATION + x*ARRAY_SIZE_Y + y), pgm_read_byte_near(ARRAY_CALIBRATION + x*ARRAY_SIZE_Y + y + 1) );
+		}
+	}
+} //transd_array_load
+
+
+#ifdef DEBUG_PINS
+/*
+
+*/
+void debug_pins () {
+	uint8_t pin;
+	
+	Serial.println(F("DEBUG ROUTINE - PINS"));
+	Serial.print(F("3"));
+	delay(1000);
+	Serial.print(F(" 2"));
+	delay(1000);
+	Serial.print(F(" 1"));
+	delay(1000);
+	Serial.println(F(" GO!"));
+	
+	for( pin = 0; pin < 70; pin++ ){
+		
+		//sets all pins as low
+		PORTA = 0;
+		PORTB = 0;
+		PORTC = 0;
+		PORTD = 0;
+		//PORTE = 0;
+		PORTF = 0;
+		PORTG = 0;
+		PORTH = 0;
+		//PORTI = 0;
+		PORTJ = 0;
+		PORTK = 0;
+		PORTL = 0;
+		
+		if( pin == 0 || pin == 1 || pin == 2 || pin == 3 || pin == 4 || pin == 5 ){
+			
+			Serial.print(F("Skipping pin "));
+			Serial.println(pin);
+		}
+		else {
+			
+			//sets the current pin as high
+			*(PINS[pin].bank_ptr) |= PINS[pin].bit_msk;
+			Serial.print(F("Testing pin "));
+			Serial.println(pin);
+			delay(DEBUG_PINS);
+		}
+
+	}
+	
+	//sets all pins as low
+	PORTA = 0;
+	PORTB = 0;
+	PORTC = 0;
+	PORTD = 0;
+	//PORTE = 0;
+	PORTF = 0;
+	PORTG = 0;
+	PORTH = 0;
+	//PORTI = 0;
+	PORTJ = 0;
+	PORTK = 0;
+	PORTL = 0;
+		
+	Serial.println(F("End of routine"));
+} //debug_pins
+#endif
+
+#ifdef DEBUG_MAP
+/*
+
+*/
+void debug_map () {
+	
+	uint8_t x, y;
+	uint8_t pin;
+	
+	Serial.println(F("DEBUG ROUTINE - PIN MAPPING"));
+	Serial.print(F("3"));
+	delay(1000);
+	Serial.print(F(" 2"));
+	delay(1000);
+	Serial.print(F(" 1"));
+	delay(1000);
+	Serial.println(F(" GO!"));
+	
+	for(x = 0; x < ARRAY_SIZE_X; x++){
+		for(y = 0; y < ARRAY_SIZE_Y; y++){
+
+			//sets all pins as low
+			PORTA = 0;
+			PORTB = 0;
+			PORTC = 0;
+			PORTD = 0;
+			//PORTE = 0;
+			PORTF = 0;
+			PORTG = 0;
+			PORTH = 0;
+			//PORTI = 0;
+			PORTJ = 0;
+			PORTK = 0;
+			PORTL = 0;
+			
+			pin = transd_array[x][y].port_pin;
+		
+			Serial.print(F("Testing ["));
+			Serial.print(x);
+			Serial.print(F(","));
+			Serial.print(y);
+			Serial.print(F("] on pin "));
+			Serial.println(pin);
+			
+			*(PINS[pin].bank_ptr) |= PINS[pin].bit_msk;
+			
+			delay(DEBUG_MAP);
+		}
+	}
+			
+	//sets all pins as low
+	PORTA = 0;
+	PORTB = 0;
+	PORTC = 0;
+	PORTD = 0;
+	//PORTE = 0;
+	PORTF = 0;
+	PORTG = 0;
+	PORTH = 0;
+	//PORTI = 0;
+	PORTJ = 0;
+	PORTK = 0;
+	PORTL = 0;
+		
+	Serial.println(F("End of routine"));
+} //debug_map
+#endif
+
+#ifdef DEBUG_INPUT
+/*
+
+*/
+void debug_input () {
+	
+	Serial.println(F("DEBUG ROUTINE - INPUT"));
 	
 	if(mode == MODE_MOVE_OFF || mode == MODE_MOVE_ON){
 		Serial.print(F("Move from (")); Serial.print(traj_ctrl.lastx); Serial.print(F(",")); Serial.print(traj_ctrl.lasty); Serial.print(F(",")); Serial.print(traj_ctrl.lastz); Serial.print(F(") to (")); Serial.print(traj_ctrl.x); Serial.print(F(",")); Serial.print(traj_ctrl.y); Serial.print(F(",")); Serial.print(traj_ctrl.z); Serial.print(F(") at ")); Serial.print(traj_ctrl.s); Serial.print(F("mm/s with duty cycle of ")); Serial.print(traj_ctrl.d);
@@ -713,20 +922,161 @@ void input_print () {
 	}
 	Serial.print(F("\n"));
 
+	Serial.println(F("End of routine"));
+} //debug_input
 #endif
-} //input_print
 
+#ifdef DEBUG_PATTERN
 /*
 
 */
-void transd_array_load ( t_transd_array *transd_array ){
+void debug_pattern () {
 	
-	uint8_t x, y;
+	uint8_t i,x,y;
+	
+	Serial.println(F("DEBUG ROUTINE - PATTERN"));
+	
+	//prints the header of the collumns
+	Serial.println(F("position_x;position_y;port_pin;phase_comp;pattern"));
 	
 	for(x = 0; x < ARRAY_SIZE_X; x++){
 		for(y = 0; y < ARRAY_SIZE_Y; y++){
 
-			transd_array_set( transd_array, x, y, pgm_read_byte_near(ARRAY_CALIBRATION + x*ARRAY_SIZE_Y + y), pgm_read_byte_near(ARRAY_CALIBRATION + x*ARRAY_SIZE_Y + y + 1) );
+			Serial.print(x);
+			Serial.print(F(";"));
+			Serial.print(y);
+			Serial.print(F(";"));
+			Serial.print(transd_array[x][y].port_pin);
+			Serial.print(F(";"));
+			Serial.print(transd_array[x][y].phase_comp);
+			Serial.print(F(";"));
+			//converts the 16 bit pattern to a 16 characters string
+			//the '#' represents a active output and the '_' represents a inactive output
+			for(i = 0; i < ARRAY_PHASERES; i++) {
+
+				//creates a mask with the current bit = 1
+				if(transd_array[x][y].pattern & (1 << (i))) { //if the pattern have the current bit = 1
+					Serial.print(F("#")); 
+				}
+				else {
+					Serial.print(F("_"));
+				}
+			}
+			Serial.print(F("\n"));
 		}
 	}
-} //transd_array_load
+
+	Serial.println(F("End of routine"));
+} //debug_pattern
+#endif
+
+#ifdef DEBUG_TRAJ
+/*
+
+*/
+void debug_traj_header () {
+	
+	Serial.println(F("DEBUG ROUTINE - TRAJ"));
+	
+	//prints the header of the collumns
+	Serial.println(F("step_idx;position_x;position_y"));
+	
+} //debug_traj_header
+
+/*
+
+*/
+void debug_traj_step (const uint8_t step_idx, const uint8_t focus_x, const uint8_t focus_y) {
+	
+	Serial.print(step_idx);
+	Serial.print(F(";"));
+	Serial.print(focus_x);
+	Serial.print(F(";"));
+	Serial.print(focus_y);
+	Serial.print(F("\n"));
+	
+} //debug_traj_step
+
+/*
+
+*/
+void debug_traj_speed (const uint8_t s, const uint8_t from_x, const uint8_t from_y, const uint8_t from_z, const uint8_t to_x, const uint8_t to_y, const uint8_t to_z, const int8_t Dx, const int8_t Dy, const int8_t Dz, const uint32_t distance, const uint32_t speed_axys, const uint32_t interval) {
+	
+	Serial.print(F("s"));			Serial.println(s);
+	Serial.print(F("from_x"));		Serial.println(from_x);
+	Serial.print(F("from_y"));		Serial.println(from_y);
+	Serial.print(F("from_z"));		Serial.println(from_z);
+	Serial.print(F("to_x"));		Serial.println(to_x);
+	Serial.print(F("to_y"));		Serial.println(to_y);
+	Serial.print(F("to_z"));		Serial.println(to_z);
+	Serial.print(F("Dx"));			Serial.println(Dx);
+	Serial.print(F("Dy"));			Serial.println(Dy);
+	Serial.print(F("Dz"));			Serial.println(Dz);
+	Serial.print(F("distance"));	Serial.println(distance);
+	Serial.print(F("speed_axys"));	Serial.println(speed_axys);
+	Serial.print(F("interval"));	Serial.println(interval);
+
+	Serial.println(F("End of routine"));
+} //debug_traj_speed
+#endif
+
+#ifdef DEBUG_TIMER
+/*
+
+*/
+void debug_timer () {
+	
+	uint8_t x, y, phase_idx, bit, pin, port_idx = 0;
+		
+	for(phase_idx = 0; phase_idx < ARRAY_PHASERES; phase_idx++){
+		traj_port_buffer[0][phase_idx][0] = 0x00; //PORTA
+		traj_port_buffer[0][phase_idx][1] = 0x00; //PORTB
+		traj_port_buffer[0][phase_idx][2] = 0x00; //PORTC
+		traj_port_buffer[0][phase_idx][3] = 0x00; //PORTD
+		traj_port_buffer[0][phase_idx][4] = 0x00; //PORTF
+		traj_port_buffer[0][phase_idx][5] = 0x00; //PORTG
+		traj_port_buffer[0][phase_idx][6] = 0x00; //PORTH
+		traj_port_buffer[0][phase_idx][7] = 0x00; //PORTJ
+		traj_port_buffer[0][phase_idx][8] = 0x00; //PORTK
+		traj_port_buffer[0][phase_idx][9] = 0x00; //PORTL
+	}
+		
+	for(x = 0; x < ARRAY_SIZE_X; x++){
+		for(y = 0; y < ARRAY_SIZE_Y; y++){
+			
+			//gets the pin that the transducer is connected to
+			pin = transd_array[x][y].port_pin;
+			
+			if(PINS[pin].bank_ptr == &PORTA) port_idx = 0;
+			if(PINS[pin].bank_ptr == &PORTB) port_idx = 1;
+			if(PINS[pin].bank_ptr == &PORTC) port_idx = 2;
+			if(PINS[pin].bank_ptr == &PORTD) port_idx = 3;
+			if(PINS[pin].bank_ptr == &PORTF) port_idx = 4;
+			if(PINS[pin].bank_ptr == &PORTG) port_idx = 5;
+			if(PINS[pin].bank_ptr == &PORTH) port_idx = 6;
+			if(PINS[pin].bank_ptr == &PORTJ) port_idx = 7;
+			if(PINS[pin].bank_ptr == &PORTK) port_idx = 8;
+			if(PINS[pin].bank_ptr == &PORTL) port_idx = 9;
+			
+			for(phase_idx = 0; phase_idx < ARRAY_PHASERES; phase_idx++){
+			
+				//access the pattern and gets the value for the bit representing the current step
+				bit = DEBUG_TIMER & (1 << phase_idx);
+				
+				//updates only the current pin
+				if(bit) {
+					traj_port_buffer[0][phase_idx][port_idx] |= PINS[pin].bit_msk;
+				}
+			}
+		}
+	}
+	
+	traj_step_idx = 0;
+	traj_step_num = 1;
+	array_phase_idx = 0;
+	mode = MODE_ON;
+	enableTimer4();
+	
+	Serial.println(F("Output signal is set up..."));
+} //debug_timer
+#endif

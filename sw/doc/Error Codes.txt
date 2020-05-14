@@ -4,6 +4,7 @@ ERROR CODES
 1	Memory allocation error
 2	Unable to open file
 3	Null pointer
+4	Index out of bounds
 
 /* ULTRASONIC */
 
