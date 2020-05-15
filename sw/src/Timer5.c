@@ -25,7 +25,7 @@ void setTimer5 (uint32_t interval) {
 	TCNT5  = 0;
 
 	OCR5A = (uint16_t) (interval/64) - 1; // compare match register 16MHz clock, 1 prescaler, 400kHz frequency (the timer stats at zero hence the -1)
-	
+ 
 	// CTC mode
 	TCCR5B |= (1 << WGM12); 
 	

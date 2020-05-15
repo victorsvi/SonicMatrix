@@ -20,6 +20,18 @@
 	O destino é informado pela serial, o arduino (que sabe a origem) vai fazer uma linha reta até o destino, colocando todos os "passos" nesse array antes de iniciar (deve demorar cerca de 180ms para 100 passos).
 */
 
+/*
+	UPGRADES
+	
+	TRAJ: Ao invés de indexar o movimento por passo em um eixo de referência, indexar pelo tempo ou por unidade de distância na reta do deslocamento.
+*/
+
+/*
+	BUGS
+	
+	Timer 5 náo esta funcionando
+	No modo de mover e desativar (m), não está desativando após o movimento.
+*/
 
 #include <stdint.h>
 #include <Arduino.h>
@@ -33,7 +45,7 @@
 //#define DEBUG_MAP 2000 //DELAY BETWEEN PINS IN MS //coloca saída nível alto no pino de cada elemento, na ordem da matriz {(0,0),(0,1),(0,2),(1,0),(1,1),(1,2),...}. Testa o mapeamento de pinos
 //#define DEBUG_INPUT //retorna a interpretação da entrada. Testa o parse dos comandos
 //#define DEBUG_PATTERN //retorna o pattern de cada elemento quando ele for calculado. Testa a geração dos padrões
-//#define DEBUG_TRAJ //retorna as coordenadas dos pontos da trajetória e os dados de velocidade
+#define DEBUG_TRAJ //retorna as coordenadas dos pontos da trajetória e os dados de velocidade
 //#define DEBUG_TIMER 0xAAAA //PATTERN MASK 0xAAAA = #_#_#_#_#_#_#_#_ //configura a saída de todos os elementos com o padrão especificado. Testa a capacidade de gerar o sinal de saída para todos os canais.
 
 /*
@@ -54,13 +66,12 @@
 
 ISR( TIMER4_COMPA_vect );
 ISR( TIMER5_COMPA_vect );
-
+void output_reset ();
 uint8_t traj_calc (const uint8_t from_x, const uint8_t from_y, const uint8_t from_z, const uint8_t to_x, const uint8_t to_y, const uint8_t to_z );
 void traj_calc_step (uint8_t step_idx, const uint8_t duty_cycle, const uint8_t focus_x, const uint8_t focus_y, const uint8_t focus_z );
 uint8_t traj_solve_y (uint8_t x, uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2 );
 uint8_t traj_solve_z (uint8_t x, uint8_t x1, uint8_t z1, uint8_t x2, uint8_t z2 );
 uint32_t traj_calc_speed (const uint8_t s, const uint8_t from_x, const uint8_t from_y, const uint8_t from_z, const uint8_t to_x, const uint8_t to_y, const uint8_t to_z );
-
 uint8_t input_parse ();
 void input_parse_token (char *token);
 void input_execute ();
@@ -78,7 +89,7 @@ void debug_pattern ();
 #endif
 #ifdef DEBUG_TRAJ
 void debug_traj_header ();
-void debug_traj_step (const uint8_t step_idx, const uint8_t focus_x, const uint8_t focus_y);
+void debug_traj_step (const uint8_t step_idx, const uint8_t focus_x, const uint8_t focus_y, const uint8_t focus_z);
 void debug_traj_speed (const uint8_t s, const uint8_t from_x, const uint8_t from_y, const uint8_t from_z, const uint8_t to_x, const uint8_t to_y, const uint8_t to_z, const int8_t Dx, const int8_t Dy, const int8_t Dz, const uint32_t distance, const uint32_t speed_axys, const uint32_t interval);
 #endif
 #ifdef DEBUG_TIMER
@@ -272,18 +283,20 @@ void setup () {
 	Serial.begin(115200);
 	
 	//set ports as output (bit high = output)
-	DDRA = 0xFF;
-	DDRB = 0xFF;
-	DDRC = 0xFF;
-	DDRD = 0xFF;
+	DDRA = 0xFF; //11111111
+	DDRB = 0xFF; //11111111
+	DDRC = 0xFF; //11111111
+	DDRD = 0xFF;// |= 0x8F; //1xxx1111
 	//DDRE = 0xFF;
-	DDRF = 0xFF;
-	DDRG = 0xFF;
-	DDRH = 0xFF;
+	DDRF = 0xFF; //11111111
+	DDRG = 0xFF;// |= 0x07; //xxxxx111
+	DDRH = 0xFF;// |= 0x3F; //xx111111
 	//DDRI = 0xFF;
-	DDRJ = 0xFF;
-	DDRK = 0xFF;
-	DDRL = 0xFF;
+	DDRJ = 0xFF;// |= 0x03; //xxxxxx11
+	DDRK = 0xFF; //11111111
+	DDRL = 0xFF; //11111111
+	
+	output_reset ();
 	
 #ifdef DEBUG_PINS
 	debug_pins ();
@@ -318,6 +331,8 @@ void loop () {
 #endif
 		input_execute();
 	}
+ 
+	if(mode == MODE_MOVE_OFF)	{Serial.print(traj_step_num);Serial.print(" ");Serial.println(traj_step_idx);}
 	
 } //loop
 
@@ -353,12 +368,15 @@ ISR( TIMER4_COMPA_vect ) {
 */
 ISR( TIMER5_COMPA_vect ) {
 
-	
-	if(traj_step_idx <= traj_step_num - 1) { //increments the step until reaches the last step
+	if(traj_step_idx < traj_step_num ) { //increments the step until reaches the last step
 		traj_step_idx++;
 	}
 	else { //then stay in the last step and disables the timer
 		disableTimer5 ();
+		if(mode == MODE_MOVE_OFF) {
+			disableTimer4 ();
+			output_reset ();
+		}
 	}
 
 } //ISR T5
@@ -406,7 +424,7 @@ uint8_t traj_calc (const uint8_t from_x, const uint8_t from_y, const uint8_t fro
 			}
 		}
 	}
-	else { /* if the trajectory is perperdicular to the x and y axys */
+	else if( from_z != to_z ){ /* if the trajectory is perperdicular to the x and y axys */
 		
 		traj_x = from_x;
 		traj_y = from_y;
@@ -488,7 +506,7 @@ void traj_calc_step (uint8_t step_idx, const uint8_t duty_cycle, const uint8_t f
 	}
 	
 #ifdef DEBUG_TRAJ
-	debug_traj_step (step_idx, focus_x, focus_y);
+	debug_traj_step (step_idx, focus_x, focus_y, focus_z);
 #endif
 	
 #ifdef DEBUG_PATTERN
@@ -575,7 +593,12 @@ uint32_t traj_calc_speed (const uint8_t s, const uint8_t from_x, const uint8_t f
 		speed_axys = s;
 	}
 	
-	interval = (TRAJ_RES * 10E6) / speed_axys;
+  if( speed_axys == 0 ) { /* if the speed on the chosen axys is smaller than 1 */
+    
+    speed_axys = 1;
+  }
+  
+	interval = (TRAJ_RES * 1E6) / speed_axys;
 	
 
 #ifdef DEBUG_TRAJ
@@ -686,21 +709,51 @@ void input_execute (){
 	
 	if(mode == MODE_MOVE_OFF || mode == MODE_MOVE_ON){
 		
-		traj_step_num = traj_calc (traj_ctrl.lastx, traj_ctrl.lasty, traj_ctrl.lastz, traj_ctrl.x, traj_ctrl.y, traj_ctrl.z );
-		
-		interval = traj_calc_speed (traj_ctrl.s, traj_ctrl.lastx, traj_ctrl.lasty, traj_ctrl.lastz, traj_ctrl.x, traj_ctrl.y, traj_ctrl.z );
+		if(	traj_ctrl.lastx == traj_ctrl.x &&
+			traj_ctrl.lasty == traj_ctrl.y &&
+			traj_ctrl.lastz == traj_ctrl.z) { /* no movement? */
 				
-		setTimer5 (interval);
-		
-		traj_step_idx = 0;
-		array_phase_idx = 0;
-		
-		traj_ctrl.lastx = traj_ctrl.x;
-		traj_ctrl.lasty = traj_ctrl.y;
-		traj_ctrl.lastz = traj_ctrl.z;
-		
-		enableTimer5 ();
-		enableTimer4 ();
+				if(mode == MODE_MOVE_OFF) {
+					traj_ctrl.lastx = traj_ctrl.x;
+					traj_ctrl.lasty = traj_ctrl.y;
+					traj_ctrl.lastz = traj_ctrl.z;
+					
+					disableTimer5 ();
+					disableTimer4 ();
+					output_reset ();
+				}
+				else {
+					traj_calc_step (0, traj_ctrl.d, traj_ctrl.x, traj_ctrl.y, traj_ctrl.z );
+					
+					traj_step_idx = 0;
+					traj_step_num = 1;
+					array_phase_idx = 0;
+					
+					traj_ctrl.lastx = traj_ctrl.x;
+					traj_ctrl.lasty = traj_ctrl.y;
+					traj_ctrl.lastz = traj_ctrl.z;
+					
+					disableTimer5 ();
+					enableTimer4 ();
+				}
+			}
+		else { /* movement */
+			traj_step_num = traj_calc (traj_ctrl.lastx, traj_ctrl.lasty, traj_ctrl.lastz, traj_ctrl.x, traj_ctrl.y, traj_ctrl.z );
+			
+			interval = traj_calc_speed (traj_ctrl.s, traj_ctrl.lastx, traj_ctrl.lasty, traj_ctrl.lastz, traj_ctrl.x, traj_ctrl.y, traj_ctrl.z );
+					
+			setTimer5 (interval);
+			
+			traj_step_idx = 0;
+			array_phase_idx = 0;
+			
+			traj_ctrl.lastx = traj_ctrl.x;
+			traj_ctrl.lasty = traj_ctrl.y;
+			traj_ctrl.lastz = traj_ctrl.z;
+			
+			enableTimer5 ();
+			enableTimer4 ();
+		}
 	}
 	else if(mode == MODE_ON) {
 		
@@ -740,6 +793,7 @@ void input_execute (){
 		
 		disableTimer5 ();
 		disableTimer4 ();
+		output_reset ();
 	}
 	
 } //input_execute
@@ -754,11 +808,30 @@ void transd_array_load ( /*t_transd_array *transd_array(*/ ){
 	for(x = 0; x < ARRAY_SIZE_X; x++){
 		for(y = 0; y < ARRAY_SIZE_Y; y++){
 
-			transd_array_set( /*transd_array,*/ x, y, pgm_read_byte_near(ARRAY_CALIBRATION + x*ARRAY_SIZE_Y + y), pgm_read_byte_near(ARRAY_CALIBRATION + x*ARRAY_SIZE_Y + y + 1) );
+      //Serial.print((x*ARRAY_SIZE_Y + y)*2); Serial.print("\t"); 
+      //Serial.println(pgm_read_byte_near(ARRAY_CALIBRATION + (x*ARRAY_SIZE_Y + y)*2));
+      //Serial.println(pgm_read_byte_near(ARRAY_CALIBRATION[x][y][0]));
+      //Serial.println(ARRAY_CALIBRATION[x][y][0]);
+			transd_array_set( /*transd_array,*/ x, y, pgm_read_byte_near(&(ARRAY_CALIBRATION[x][y][0])), pgm_read_byte_near(&(ARRAY_CALIBRATION[x][y][1])) );
 		}
 	}
 } //transd_array_load
 
+void output_reset () {
+	//sets all pins as low
+	PORTA = 0;
+	PORTB = 0;
+	PORTC = 0;
+	PORTD = 0;
+	//PORTE = 0;
+	PORTF = 0;
+	PORTG = 0;
+	PORTH = 0;
+	//PORTI = 0;
+	PORTJ = 0;
+	PORTK = 0;
+	PORTL = 0;
+}
 
 #ifdef DEBUG_PINS
 /*
@@ -778,19 +851,7 @@ void debug_pins () {
 	
 	for( pin = 0; pin < 70; pin++ ){
 		
-		//sets all pins as low
-		PORTA = 0;
-		PORTB = 0;
-		PORTC = 0;
-		PORTD = 0;
-		//PORTE = 0;
-		PORTF = 0;
-		PORTG = 0;
-		PORTH = 0;
-		//PORTI = 0;
-		PORTJ = 0;
-		PORTK = 0;
-		PORTL = 0;
+		output_reset ();
 		
 		if( pin == 0 || pin == 1 || pin == 2 || pin == 3 || pin == 4 || pin == 5 ){
 			
@@ -808,19 +869,7 @@ void debug_pins () {
 
 	}
 	
-	//sets all pins as low
-	PORTA = 0;
-	PORTB = 0;
-	PORTC = 0;
-	PORTD = 0;
-	//PORTE = 0;
-	PORTF = 0;
-	PORTG = 0;
-	PORTH = 0;
-	//PORTI = 0;
-	PORTJ = 0;
-	PORTK = 0;
-	PORTL = 0;
+	output_reset ();
 		
 	Serial.println(F("End of routine"));
 } //debug_pins
@@ -847,19 +896,7 @@ void debug_map () {
 	for(x = 0; x < ARRAY_SIZE_X; x++){
 		for(y = 0; y < ARRAY_SIZE_Y; y++){
 
-			//sets all pins as low
-			PORTA = 0;
-			PORTB = 0;
-			PORTC = 0;
-			PORTD = 0;
-			//PORTE = 0;
-			PORTF = 0;
-			PORTG = 0;
-			PORTH = 0;
-			//PORTI = 0;
-			PORTJ = 0;
-			PORTK = 0;
-			PORTL = 0;
+			output_reset ();
 			
 			pin = transd_array[x][y].port_pin;
 		
@@ -876,19 +913,7 @@ void debug_map () {
 		}
 	}
 			
-	//sets all pins as low
-	PORTA = 0;
-	PORTB = 0;
-	PORTC = 0;
-	PORTD = 0;
-	//PORTE = 0;
-	PORTF = 0;
-	PORTG = 0;
-	PORTH = 0;
-	//PORTI = 0;
-	PORTJ = 0;
-	PORTK = 0;
-	PORTL = 0;
+	output_reset ();
 		
 	Serial.println(F("End of routine"));
 } //debug_map
@@ -979,20 +1004,22 @@ void debug_traj_header () {
 	Serial.println(F("DEBUG ROUTINE - TRAJ"));
 	
 	//prints the header of the collumns
-	Serial.println(F("step_idx;position_x;position_y"));
+	Serial.println(F("step_idx;position_x;position_y;position_z"));
 	
 } //debug_traj_header
 
 /*
 
 */
-void debug_traj_step (const uint8_t step_idx, const uint8_t focus_x, const uint8_t focus_y) {
+void debug_traj_step (const uint8_t step_idx, const uint8_t focus_x, const uint8_t focus_y, const uint8_t focus_z) {
 	
 	Serial.print(step_idx);
 	Serial.print(F(";"));
 	Serial.print(focus_x);
 	Serial.print(F(";"));
 	Serial.print(focus_y);
+  Serial.print(F(";"));
+  Serial.print(focus_z);
 	Serial.print(F("\n"));
 	
 } //debug_traj_step
@@ -1002,19 +1029,19 @@ void debug_traj_step (const uint8_t step_idx, const uint8_t focus_x, const uint8
 */
 void debug_traj_speed (const uint8_t s, const uint8_t from_x, const uint8_t from_y, const uint8_t from_z, const uint8_t to_x, const uint8_t to_y, const uint8_t to_z, const int8_t Dx, const int8_t Dy, const int8_t Dz, const uint32_t distance, const uint32_t speed_axys, const uint32_t interval) {
 	
-	Serial.print(F("s"));			Serial.println(s);
-	Serial.print(F("from_x"));		Serial.println(from_x);
-	Serial.print(F("from_y"));		Serial.println(from_y);
-	Serial.print(F("from_z"));		Serial.println(from_z);
-	Serial.print(F("to_x"));		Serial.println(to_x);
-	Serial.print(F("to_y"));		Serial.println(to_y);
-	Serial.print(F("to_z"));		Serial.println(to_z);
-	Serial.print(F("Dx"));			Serial.println(Dx);
-	Serial.print(F("Dy"));			Serial.println(Dy);
-	Serial.print(F("Dz"));			Serial.println(Dz);
-	Serial.print(F("distance"));	Serial.println(distance);
-	Serial.print(F("speed_axys"));	Serial.println(speed_axys);
-	Serial.print(F("interval"));	Serial.println(interval);
+	Serial.print(F("s: "));			Serial.println(s);
+	Serial.print(F("from_x: "));		Serial.println(from_x);
+	Serial.print(F("from_y: "));		Serial.println(from_y);
+	Serial.print(F("from_z: "));		Serial.println(from_z);
+	Serial.print(F("to_x: "));		Serial.println(to_x);
+	Serial.print(F("to_y: "));		Serial.println(to_y);
+	Serial.print(F("to_z: "));		Serial.println(to_z);
+	Serial.print(F("Dx: "));			Serial.println(Dx);
+	Serial.print(F("Dy: "));			Serial.println(Dy);
+	Serial.print(F("Dz: "));			Serial.println(Dz);
+	Serial.print(F("distance: "));	Serial.println(distance);
+	Serial.print(F("speed_axys: "));	Serial.println(speed_axys);
+	Serial.print(F("interval: "));	Serial.println(interval);
 
 	Serial.println(F("End of routine"));
 } //debug_traj_speed
