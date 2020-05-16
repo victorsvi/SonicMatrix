@@ -33,6 +33,12 @@
 	Se o deslocamento tiver mais de 64 milimetros em um eixo, o movimento é cortado.
 */
 
+/* 
+ * 
+ * 
+ * by Victor Salvi (victorsvi@gmail.com), 2020.
+ */
+ 
 #include <stdint.h>
 #include <Arduino.h>
 #include "Ultrasonic.h"
@@ -41,6 +47,7 @@
 #include "Timer3.h"
 #include "Math.h"
 
+/* Toggle these defines to */
 //#define DEBUG_PINS 2000 //DELAY BETWEEN PINS IN MS //coloca saída nível alto em cada pino sequencialmente (a partir do 6). Testa a parte de manipular as portas pelos registradores
 //#define DEBUG_MAP 2000 //DELAY BETWEEN PINS IN MS //coloca saída nível alto no pino de cada elemento, na ordem da matriz {(0,0),(0,1),(0,2),(1,0),(1,1),(1,2),...}. Testa o mapeamento de pinos
 //#define DEBUG_INPUT //retorna a interpretação da entrada. Testa o parse dos comandos
