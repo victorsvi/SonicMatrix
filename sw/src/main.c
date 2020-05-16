@@ -29,8 +29,8 @@
 /*
 	BUGS
 	
-	Timer 5 náo esta funcionando
-	No modo de mover e desativar (m), não está desativando após o movimento.
+	Se a velocidade for muito lenta no eixo, pode dar overflow no timer :o
+	Se o deslocamento tiver mais de 64 milimetros em um eixo, o movimento é cortado.
 */
 
 #include <stdint.h>
@@ -38,14 +38,14 @@
 #include "Ultrasonic.h"
 #include "Debug.h"
 #include "Timer4.h"
-#include "Timer5.h"
+#include "Timer3.h"
 #include "Math.h"
 
 //#define DEBUG_PINS 2000 //DELAY BETWEEN PINS IN MS //coloca saída nível alto em cada pino sequencialmente (a partir do 6). Testa a parte de manipular as portas pelos registradores
 //#define DEBUG_MAP 2000 //DELAY BETWEEN PINS IN MS //coloca saída nível alto no pino de cada elemento, na ordem da matriz {(0,0),(0,1),(0,2),(1,0),(1,1),(1,2),...}. Testa o mapeamento de pinos
 //#define DEBUG_INPUT //retorna a interpretação da entrada. Testa o parse dos comandos
 //#define DEBUG_PATTERN //retorna o pattern de cada elemento quando ele for calculado. Testa a geração dos padrões
-#define DEBUG_TRAJ //retorna as coordenadas dos pontos da trajetória e os dados de velocidade
+//#define DEBUG_TRAJ //retorna as coordenadas dos pontos da trajetória e os dados de velocidade
 //#define DEBUG_TIMER 0xAAAA //PATTERN MASK 0xAAAA = #_#_#_#_#_#_#_#_ //configura a saída de todos os elementos com o padrão especificado. Testa a capacidade de gerar o sinal de saída para todos os canais.
 
 /*
@@ -65,7 +65,7 @@
 /* PROTOTYPES */
 
 ISR( TIMER4_COMPA_vect );
-ISR( TIMER5_COMPA_vect );
+ISR( TIMER3_COMPA_vect );
 void output_reset ();
 uint8_t traj_calc (const uint8_t from_x, const uint8_t from_y, const uint8_t from_z, const uint8_t to_x, const uint8_t to_y, const uint8_t to_z );
 void traj_calc_step (uint8_t step_idx, const uint8_t duty_cycle, const uint8_t focus_x, const uint8_t focus_y, const uint8_t focus_z );
@@ -331,9 +331,7 @@ void loop () {
 #endif
 		input_execute();
 	}
- 
-	if(mode == MODE_MOVE_OFF)	{Serial.print(traj_step_num);Serial.print(" ");Serial.println(traj_step_idx);}
-	
+ 	
 } //loop
 
 /*
@@ -359,20 +357,33 @@ ISR( TIMER4_COMPA_vect ) {
 	PORTK = traj_port_buffer[step_idx][phase_idx][8];
 	PORTL = traj_port_buffer[step_idx][phase_idx][9];
 	
-	phase_idx < ARRAY_PHASERES ? array_phase_idx++ : array_phase_idx = 0;
+	if( phase_idx < ARRAY_PHASERES ) {
+	  array_phase_idx++;
+	}
+ else {
+    array_phase_idx = 0; 
+  }
 
 } //ISR T4
 
 /*
 
 */
-ISR( TIMER5_COMPA_vect ) {
+ISR( TIMER3_COMPA_vect ) {
+  
+#ifdef DEBUG_TRAJ
+  Serial.print(F("Step "));Serial.print(traj_step_idx);Serial.print(F(" of "));Serial.println(traj_step_num - 1);
+#endif
 
-	if(traj_step_idx < traj_step_num ) { //increments the step until reaches the last step
+	if(traj_step_idx < (traj_step_num - 1) ) { //increments the step until reaches the last step
 		traj_step_idx++;
 	}
 	else { //then stay in the last step and disables the timer
-		disableTimer5 ();
+		disableTimer3 ();
+#ifdef DEBUG_TRAJ
+  Serial.println(F("Destiny reached"));
+#endif
+
 		if(mode == MODE_MOVE_OFF) {
 			disableTimer4 ();
 			output_reset ();
@@ -718,7 +729,7 @@ void input_execute (){
 					traj_ctrl.lasty = traj_ctrl.y;
 					traj_ctrl.lastz = traj_ctrl.z;
 					
-					disableTimer5 ();
+					disableTimer3 ();
 					disableTimer4 ();
 					output_reset ();
 				}
@@ -733,7 +744,7 @@ void input_execute (){
 					traj_ctrl.lasty = traj_ctrl.y;
 					traj_ctrl.lastz = traj_ctrl.z;
 					
-					disableTimer5 ();
+					disableTimer3 ();
 					enableTimer4 ();
 				}
 			}
@@ -742,7 +753,7 @@ void input_execute (){
 			
 			interval = traj_calc_speed (traj_ctrl.s, traj_ctrl.lastx, traj_ctrl.lasty, traj_ctrl.lastz, traj_ctrl.x, traj_ctrl.y, traj_ctrl.z );
 					
-			setTimer5 (interval);
+			setTimer3 (interval);
 			
 			traj_step_idx = 0;
 			array_phase_idx = 0;
@@ -751,8 +762,8 @@ void input_execute (){
 			traj_ctrl.lasty = traj_ctrl.y;
 			traj_ctrl.lastz = traj_ctrl.z;
 			
-			enableTimer5 ();
-			enableTimer4 ();
+      enableTimer4 ();
+			enableTimer3 ();
 		}
 	}
 	else if(mode == MODE_ON) {
@@ -768,7 +779,7 @@ void input_execute (){
 		traj_ctrl.lastz = traj_ctrl.z;
 		
 		
-		disableTimer5 ();
+		disableTimer3 ();
 		enableTimer4 ();
 	}
 	else if(mode == MODE_FLAT) {
@@ -786,12 +797,12 @@ void input_execute (){
 		traj_ctrl.lasty = traj_ctrl.y;
 		traj_ctrl.lastz = traj_ctrl.z;
 		
-		disableTimer5 ();
+		disableTimer3 ();
 		enableTimer4 ();
 	}
 	else if(mode == MODE_OFF) {
 		
-		disableTimer5 ();
+		disableTimer3 ();
 		disableTimer4 ();
 		output_reset ();
 	}
