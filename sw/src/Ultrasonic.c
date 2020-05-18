@@ -49,13 +49,13 @@
  * the (0,0) transducer.
  *
  *  y|
- *   |   -----------------
- *   |  | O O O O O O O O |
- *   |  | O O O O O O O O |
- *   |  | O O O O O O O O |
- *   |  | O O O O O O O O |
- *   |  o-----------------
- *   |------------------------------
+ *   |   ---------------
+ *   |  |O O O O O O O O|
+ *   |  |O O O O O O O O|
+ *   |  |O O O O O O O O|
+ *   |  |O O O O O O O O|
+ *   |  o---------------
+ *   |______________________________
  *                                 x
  *  
  * by Victor Salvi (victorsvi@gmail.com), 2020.

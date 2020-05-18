@@ -48,21 +48,14 @@
 #include "Timer3.h"
 #include "Math.h"
 
-/* Toggle these defines to */
-//#define DEBUG_PINS 2000 //DELAY BETWEEN PINS IN MS //coloca saída nível alto em cada pino sequencialmente (a partir do 6). Testa a parte de manipular as portas pelos registradores
-//#define DEBUG_MAP 2000 //DELAY BETWEEN PINS IN MS //coloca saída nível alto no pino de cada elemento, na ordem da matriz {(0,0),(0,1),(0,2),(1,0),(1,1),(1,2),...}. Testa o mapeamento de pinos
-//#define DEBUG_INPUT //retorna a interpretação da entrada. Testa o parse dos comandos
-//#define DEBUG_PATTERN //retorna o pattern de cada elemento quando ele for calculado. Testa a geração dos padrões
-//#define DEBUG_TRAJ //retorna as coordenadas dos pontos da trajetória e os dados de velocidade
+/* Toggle these defines to enable debug routines */
+//#define DEBUG_PINS 2000 //Use to debug the pin assigment using the port registers. Will set each pin high (starting  from pin 6) sequentially. The value defined is the delay between pins in microseconds
+//#define DEBUG_MAP 2000 //Use to debug the pin mapping of each element of the matrix. Will set the pin for each transducer high in the matrix order {(0,0),(0,1),(0,2),(1,0),(1,1),(1,2),...}. The value defined is the delay between pins in microseconds
+//#define DEBUG_INPUT //Use to debug the serial input parsing. Will echo the interpretation of the inputed string
+//#define DEBUG_PATTERN //Use to debug the pattern generation routine. Will serial out the pattern for each transducer of the matrix when the pattern is calculated.
+//#define DEBUG_TRAJ //Use to debug the retorna as coordenadas dos pontos da trajetória e os dados de velocidade
 //#define DEBUG_TIMER 0xAAAA //PATTERN MASK 0xAAAA = #_#_#_#_#_#_#_#_ //configura a saída de todos os elementos com o padrão especificado. Testa a capacidade de gerar o sinal de saída para todos os canais.
 
-/*
-#define TRANS_DIAMETER 16 //diameter of the element in millimeters (total length of the array cant exceed 255 millimeters)
-#define TRANS_SEPARATION 2 //distance between two consecutive elements in the array in millimeters (total length of the array cant exceed 255 millimeters)
-#define ARRAY_SIZE_X 8 //number of transducers of the array in the x dimension
-#define ARRAY_SIZE_Y 8 //number of transducers of the array in the y dimension
-#define ARRAY_PHASERES 10 //number of transducers of the array in the y dimension (max 16 bits)
-*/
 #define TRAJ_RES 1 //trajectory maximum resolution in millimeters
 #define TRAJ_MAXSTEPS 64 //maximum steps of the trajectory (max 255)
 
