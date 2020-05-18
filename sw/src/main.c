@@ -24,6 +24,7 @@
 	UPGRADES
 	
 	TRAJ: Ao invés de indexar o movimento por passo em um eixo de referência, indexar pelo tempo ou por unidade de distância na reta do deslocamento.
+	Decidir qual licença atribuir ao projeto e documentar ns arquivos
 */
 
 /*
