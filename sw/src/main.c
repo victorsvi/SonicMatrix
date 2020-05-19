@@ -1,15 +1,3 @@
-/*
-	PROGRAMAS DE TESTE
-	
-	Que códigos precisam ser criados para testar os conceitos uilizados?
-	
-	# DONE Geração de sinal 40kHz * 8 (resolução) (teste do timer) (checar jitter). Fazer também em 64 canais para verificar o desempenho.
-	# DONE Interpretação da entrada serial
-	# Dump do cálculo das fases
-	# DONE Dump das portas
-	# DONE Para testar o mapeamento dos pinos (exibir a coordenada x, y e o numero do pino em display, enquanto gera um sinal no pino. a entrada serial indica qual coordenada checar)
-	# Comparar a sqrt() do arduino com a de inteiro (custom), calculando a raiz de vários números e contando o tempo para a conclusão.
-*/
 
 /*
 	IMPORTANTE! Calcular o foco em tempo real é muito lento (cerca de 18ms por cálculo)
@@ -24,6 +12,7 @@
 	UPGRADES
 	
 	TRAJ: Ao invés de indexar o movimento por passo em um eixo de referência, indexar pelo tempo ou por unidade de distância na reta do deslocamento.
+	TRAJ: Se a trajetória tiver mais que TRAJ_MAXSTEPS, utilizar um valor maior que TRAJ_RES entre os steps.
 	Decidir qual licença atribuir ao projeto e documentar ns arquivos
 */
 
@@ -35,8 +24,33 @@
 */
 
 /* 
+ * PARTICLE MANIPULATION USING ULTRASONIC MATRIX
+ *
+ * This code implements a driver board for a ultrasonic matrix capable
+ * of generating a focal point by individually adjusting the phase of
+ * each transducer of the matrix in order to make the waves arrive in
+ * phase at the focal point, creating a constructive interference and 
+ * increasing sound pressure.
  * 
- * 
+ * The board is capable of moving the focal point along a coordinate
+ * frame.
+ *
+ * The interface consists of a serial input and defined commands (see
+ * input_parse and input_parse_token documentation for more info).
+ *
+ * It's made to run on the Arduino Mega and the expected hardware interface
+ * between the Arduino and the actual transducers are half bridge drivers,
+ * one for each channel. The mapping between each transducer and the 
+ * corresponding Arduino pin is defined in software.
+ *
+ * It also supports phase compensation for each transducer, so the response
+ * delay of each element can be measured and set in software to compensate
+ * for low phase accuracy of cheap transducers.
+ *
+ * This version controls a 8x8 matrix but the code can be easily changed
+ * to other sizes. Just be careful to not run out of dynamic memory by
+ * increasing the output buffer size.
+ *
  * by Victor Salvi (victorsvi@gmail.com), 2020.
  */
  
@@ -48,16 +62,18 @@
 #include "Timer3.h"
 #include "Math.h"
 
+/* DEFINES */
+
 /* Toggle these defines to enable debug routines */
-//#define DEBUG_PINS 2000 //Use to debug the pin assigment using the port registers. Will set each pin high (starting  from pin 6) sequentially. The value defined is the delay between pins in microseconds
+//#define DEBUG_PINS 2000 //Use to debug the pin assignment using the port registers. Will set each pin high (starting  from pin 6) sequentially. The value defined is the delay between pins in microseconds
 //#define DEBUG_MAP 2000 //Use to debug the pin mapping of each element of the matrix. Will set the pin for each transducer high in the matrix order {(0,0),(0,1),(0,2),(1,0),(1,1),(1,2),...}. The value defined is the delay between pins in microseconds
 //#define DEBUG_INPUT //Use to debug the serial input parsing. Will echo the interpretation of the inputed string
 //#define DEBUG_PATTERN //Use to debug the pattern generation routine. Will serial out the pattern for each transducer of the matrix when the pattern is calculated.
-//#define DEBUG_TRAJ //Use to debug the retorna as coordenadas dos pontos da trajetória e os dados de velocidade
-//#define DEBUG_TIMER 0xAAAA //PATTERN MASK 0xAAAA = #_#_#_#_#_#_#_#_ //configura a saída de todos os elementos com o padrão especificado. Testa a capacidade de gerar o sinal de saída para todos os canais.
+//#define DEBUG_TRAJ //Use to debug the trajectory planning routine. Will serial out the trajectory way points and the speed calculation data.
+//#define DEBUG_TIMER 0xAAAA //Use to debug the transducer signal generation (waveform, frequency accuracy, jitter). Will configure the matrix to output the defined pattern on all transducers. Note that the pattern generation will be overridden and the phase compensation will be disabled. The value defined is a binary unsigned representing the pattern to be outputted (0xAAAA = #_#_#_#_#_#_#_#_)
 
-#define TRAJ_RES 1 //trajectory maximum resolution in millimeters
-#define TRAJ_MAXSTEPS 64 //maximum steps of the trajectory (max 255)
+#define TRAJ_RES 1 //trajectory maximum resolution in millimeters (not fully implemented)
+#define TRAJ_MAXSTEPS 64 //maximum steps of the trajectory (max 255). 
 
 /* MACROS */
 
@@ -67,6 +83,7 @@
 
 ISR( TIMER4_COMPA_vect );
 ISR( TIMER3_COMPA_vect );
+void transd_array_load ( /*t_transd_array *transd_array*/ );
 void output_reset ();
 uint8_t traj_calc (const uint8_t from_x, const uint8_t from_y, const uint8_t from_z, const uint8_t to_x, const uint8_t to_y, const uint8_t to_z );
 void traj_calc_step (uint8_t step_idx, const uint8_t duty_cycle, const uint8_t focus_x, const uint8_t focus_y, const uint8_t focus_z );
@@ -97,31 +114,30 @@ void debug_traj_speed (const uint8_t s, const uint8_t from_x, const uint8_t from
 void debug_timer ();
 #endif
 
-void transd_array_load ( /*t_transd_array *transd_array*/ );
-
 /* DATA DEFINITION */
 
-enum e_mode {	MODE_OFF,		// turned off, signal is held low
-				MODE_ON, 		// turned on, with static focal point
-				MODE_MOVE_OFF, 	// move to focal point to target then tuns off
-				MODE_MOVE_ON, 	// move to focal point to target and keeps on
-				MODE_FLAT		// turned on, flat mode, all transducers in phase
+enum e_mode { // lists the operation modes
+	MODE_OFF,		// turned off, signal is held low
+	MODE_ON, 		// turned on, with static focal point
+	MODE_MOVE_OFF, 	// move the focal point from current position to target position then tuns off
+	MODE_MOVE_ON, 	// move the focal point from current position to target position and keeps on
+	MODE_FLAT		// turned on, flat mode, all transducers in phase (phase compensation applied)
 };
 
-struct s_traj_ctrl {
-	uint8_t x = 0, y = 0, z = 0, d = 0, s = 0;
-	uint8_t lastx = 0, lasty = 0, lastz = 0;
+struct s_traj_ctrl { // position and other parameters
+	uint8_t x = 0, y = 0, z = 0, d = 128, s = 10; // represent the current focus coordinates (in millimeters), duty cycle (discrete representation, [0,255] = [0°,360°]) and speed (in millimeters per second).
+	uint8_t lastx = 0, lasty = 0, lastz = 0; // represent the focus coordinates before the new command (or last position) (in millimeters)
 };
 
-struct s_pin {
-	volatile uint8_t *bank_ptr;
-	uint8_t bit_msk;
+struct s_pin { // represents a pin mask
+	volatile uint8_t *bank_ptr; // pin's bank address
+	uint8_t bit_msk; // pin's bit mask for the bank
 };
 
 /* GLOBAL VARIABLES */
 
-const uint8_t ARRAY_CALIBRATION[ARRAY_SIZE_X][ARRAY_SIZE_Y][2] PROGMEM = {
-	//pin numer, phase compensation
+const uint8_t ARRAY_CALIBRATION[ARRAY_SIZE_X][ARRAY_SIZE_Y][2] PROGMEM = { // maps the pin of each transducer of the matrix (Arduino pin) and it's phase compensation value
+	//pin numer (arduino convention), phase compensation ([0,255] = [0°,360°])
 	//x0, y0,
 	//x0, y1,
 	//0 , 0,
@@ -129,7 +145,7 @@ const uint8_t ARRAY_CALIBRATION[ARRAY_SIZE_X][ARRAY_SIZE_Y][2] PROGMEM = {
 	//2 , 0,
 	//3 , 0,
 	//4 , 0,
-	//5 , 0,
+	//5 , 0, //this matrix uses pins from 6 to 69 (optimized to use the least banks possible)
 	6 , 0,
 	7 , 0,
 	8 , 0,
@@ -196,8 +212,7 @@ const uint8_t ARRAY_CALIBRATION[ARRAY_SIZE_X][ARRAY_SIZE_Y][2] PROGMEM = {
 	69, 0
 };
 
-/* Port bank and bit mask for each pin indexed by pin number */
-const struct s_pin PINS[70] = {
+const struct s_pin PINS[70] = { // Port bank and bit mask for each Arduino Mega pin indexed by pin number
 	{&PORTE, MSK(0)},
 	{&PORTE, MSK(1)},
 	{&PORTE, MSK(4)},
@@ -270,14 +285,14 @@ const struct s_pin PINS[70] = {
 	{&PORTK, MSK(7)}
 };
 
-struct s_traj_ctrl traj_ctrl;
-volatile uint8_t traj_step_idx = 0, traj_step_num = 0;
-volatile uint8_t array_phase_idx = 0;
-enum e_mode mode;
+struct s_traj_ctrl traj_ctrl; // position and other parameters
+volatile uint8_t traj_step_idx = 0, traj_step_num = 0; // current step and number of steps of the trajectory
+volatile uint8_t array_phase_idx = 0; // current phase index of the signal (which bit of the pattern is being outputted)
+enum e_mode mode; // mode of operation
 
 /*t_transd_array *transd_array = NULL;*/
 
-uint8_t traj_port_buffer[TRAJ_MAXSTEPS][ARRAY_PHASERES][10]; //buffers the ports state for each coordinate (x,y,z) of the movement, for each slice of the wave period, for each PORT
+uint8_t traj_port_buffer[TRAJ_MAXSTEPS][ARRAY_PHASERES][10]; //buffers the ports state for each coordinate (x,y,z) of the movement, for each slice of the wave period, for each PORT (this project uses 10 ports)
 
 void setup () {
 	
@@ -297,13 +312,13 @@ void setup () {
 	DDRK = 0xFF; //11111111
 	DDRL = 0xFF; //11111111
 	
-	output_reset ();
+	output_reset (); //initialize all pins as LOW
 	
-#ifdef DEBUG_PINS
+	#ifdef DEBUG_PINS
 	debug_pins ();
-#endif
+	#endif
 	
-	setTimer4();
+	setTimer4(); //programs the timer 4 (signal generation)
 	
 	/*transd_array = transd_array_init( ARRAY_SIZE_X, ARRAY_SIZE_Y, TRANS_DIAMETER, TRANS_SEPARATION, ARRAY_PHASERES );
 	if( transd_array == NULL ) {
@@ -311,33 +326,37 @@ void setup () {
 		DEBUG_MSG("The transducer array pointer is null")
 		#endif
 	}*/
-	transd_array_load (/*transd_array*/);
+	transd_array_load (/*transd_array*/); // loads the pin number and phase compensation to the matrix
 
-#ifdef DEBUG_MAP
+	#ifdef DEBUG_MAP
 	debug_map ();
-#endif
+	#endif
 
-	mode = MODE_OFF;
+	mode = MODE_OFF; //starts with output disabled
 	
-#ifdef DEBUG_TIMER
+	#ifdef DEBUG_TIMER
 	debug_timer ();
-#endif
+	#endif
 } //setup
 
 void loop () {
 	
-	if(input_parse()) {
-#ifdef DEBUG_INPUT
+	//it accepts serial data even when the output is active, but the parsing and executing of the commands will be slower as the timer 4 will generate a lot of interrupts.
+	//it's recommended to send a "i" command before sending commands while the output is active;
+	if(input_parse()) { // if there's input data on serial line
+		#ifdef DEBUG_INPUT
 		debug_input();
-#endif
-		input_execute();
+		#endif
+		input_execute(); //execute the parsed parameters
 	}
  	
 } //loop
 
-/*
-
-*/
+/**
+ * This function will be called every interrupt of timer 4.
+ * It will update the port registers by cycle trough the buffered port registers for each step of the wave (one period is divided in many slices to allow phase control).
+ * The active/inactive control is made by enabling or disabling the timer interrupts.
+ */
 ISR( TIMER4_COMPA_vect ) {
 
 	//buffer the indexes to optimize access as they're volatile
@@ -358,110 +377,129 @@ ISR( TIMER4_COMPA_vect ) {
 	PORTK = traj_port_buffer[step_idx][phase_idx][8];
 	PORTL = traj_port_buffer[step_idx][phase_idx][9];
 	
-	if( phase_idx < ARRAY_PHASERES ) {
-	  array_phase_idx++;
+	if( phase_idx < ARRAY_PHASERES ) { //increments the current phase index. It will cycle between 0 and (ARRAY_PHASERES - 1)
+		array_phase_idx++;
 	}
- else {
-    array_phase_idx = 0; 
-  }
+	else {
+		array_phase_idx = 0; 
+	}
 
 } //ISR T4
 
-/*
-
-*/
+/**
+ * This function will be called every interrupt of timer 3.
+ * It will increment the current step index, which will be read at timer 4 interrupt.
+ * As the current step is incremented at every interrupt, the period of this timer will define the speed of the movement.
+ * The active/inactive control is made by enabling or disabling the timer interrupts.
+ */
 ISR( TIMER3_COMPA_vect ) {
   
-#ifdef DEBUG_TRAJ
-  Serial.print(F("Step "));Serial.print(traj_step_idx);Serial.print(F(" of "));Serial.println(traj_step_num - 1);
-#endif
+	#ifdef DEBUG_TRAJ
+	Serial.print(F("Step "));Serial.print(traj_step_idx);Serial.print(F(" of "));Serial.println(traj_step_num - 1);
+	#endif
 
 	if(traj_step_idx < (traj_step_num - 1) ) { //increments the step until reaches the last step
 		traj_step_idx++;
 	}
 	else { //then stay in the last step and disables the timer
 		disableTimer3 ();
-#ifdef DEBUG_TRAJ
-  Serial.println(F("Destiny reached"));
-#endif
+		#ifdef DEBUG_TRAJ
+		Serial.println(F("Destiny reached"));
+		#endif
 
-		if(mode == MODE_MOVE_OFF) {
+		if(mode == MODE_MOVE_OFF) { // disables the output if the mode demands it
 			disableTimer4 ();
 			output_reset ();
 		}
 	}
 
-} //ISR T5
+} //ISR T3
 
-/*
-
-*/
+/**
+ * Calculate the way points of the trajectory and fills the output buffer with the patterns for each way point.
+ * The traj_calc_speed function is tied to the same methodology used in this function. 
+ * @param from_x The initial coordinate on the x axis (in millimeters)
+ * @param from_y The initial coordinate on the y axis (in millimeters)
+ * @param from_z The initial coordinate on the z axis (in millimeters)
+ * @param to_x The final coordinate on the x axis (in millimeters)
+ * @param to_y The final coordinate on the y axis (in millimeters)
+ * @param to_z The final coordinate on the z axis (in millimeters)
+ * @returns The number of way points created
+ */
 uint8_t traj_calc (const uint8_t from_x, const uint8_t from_y, const uint8_t from_z, const uint8_t to_x, const uint8_t to_y, const uint8_t to_z ) {
 	
 	uint8_t traj_x, traj_y, traj_z, step_idx;
 
 	step_idx = 0;
 	
-#ifdef DEBUG_TRAJ
+	#ifdef DEBUG_TRAJ
 	debug_traj_header ();
-#endif
+	#endif
 	
-	if( from_x != to_x ) { /* if the trajectory isn't perperdicular to the x axys */
+	// The trajectory is indexed to an axis. The way points are integer coordinates on the indexed axis.
+	// choose the first axis not perpendicular to the trajectory as the indexing axis. The order of the search is x,y,z.
+	if( from_x != to_x ) { /* if the trajectory isn't perpendicular to the x axis */
 		
 		traj_x = from_x;
 		
-		for(; (from_x < to_x) ? (traj_x <= to_x) : (traj_x >= to_x); (from_x < to_x) ? (traj_x += TRAJ_RES) : (traj_x -= TRAJ_RES) ) {
-			
-			traj_y = traj_solve_y (traj_x, to_x, to_y, from_x, from_y );
-			traj_z = traj_solve_z (traj_x, to_x, to_z, from_x, from_z );
-			traj_calc_step (step_idx, traj_ctrl.d, traj_x, traj_y, traj_z );
+		for(; (from_x < to_x) ? (traj_x <= to_x) : (traj_x >= to_x); (from_x < to_x) ? (traj_x += TRAJ_RES) : (traj_x -= TRAJ_RES) ) { //iterate trough the displacement on the x axis in TRAJ_RES sized steps
+			//calculates the rounded value for the other axis
+			traj_y = traj_solve_y (traj_x, to_x, to_y, from_x, from_y ); 
+			traj_z = traj_solve_y (traj_x, to_x, to_z, from_x, from_z ); //the 3D coordinates can be calculated as two independent 2D lines
+			traj_calc_step (step_idx, traj_ctrl.d, traj_x, traj_y, traj_z ); //generates the patterns for the way point
 			step_idx++;
-			if(step_idx >= TRAJ_MAXSTEPS) {
+			if(step_idx >= TRAJ_MAXSTEPS) { // limits the maximum number of way points to not overflow the output buffer
 				break;
 			}
 		}
 	}
-	else if( from_y != to_y ) { /* if the trajectory is perperdicular to the x axys but isn't perperdicular to the y axys */
+	else if( from_y != to_y ) { /* if the trajectory is perpendicular to the x axis but isn't perpendicular to the y axis */
 		
 		traj_x = from_x;
 		traj_y = from_y;
 		
-		for(; (from_y < to_y) ? (traj_y <= to_y) : (traj_y >= to_y); (from_y < to_y) ? (traj_y += TRAJ_RES) : (traj_y -= TRAJ_RES) ) {
-			
-			traj_z = traj_solve_z (traj_y, to_y, to_z, from_y, from_z );
-			traj_calc_step (step_idx, traj_ctrl.d, traj_x, traj_y, traj_z );
+		for(; (from_y < to_y) ? (traj_y <= to_y) : (traj_y >= to_y); (from_y < to_y) ? (traj_y += TRAJ_RES) : (traj_y -= TRAJ_RES) ) { //iterate trough the displacement on the y axis in TRAJ_RES sized steps
+			//calculates the rounded value for the other axis
+			traj_z = traj_solve_y (traj_y, to_y, to_z, from_y, from_z ); //the 3D coordinates can be calculated as two independent 2D lines
+			traj_calc_step (step_idx, traj_ctrl.d, traj_x, traj_y, traj_z ); //generates the patterns for the way point
 			step_idx++;
-			if(step_idx >= TRAJ_MAXSTEPS) {
+			if(step_idx >= TRAJ_MAXSTEPS) { // limits the maximum number of way points to not overflow the output buffer
 				break;
 			}
 		}
 	}
-	else if( from_z != to_z ){ /* if the trajectory is perperdicular to the x and y axys */
+	else if( from_z != to_z ){ /* if the trajectory is perpendicular to the x and y axis */
 		
 		traj_x = from_x;
 		traj_y = from_y;
 		traj_z = from_z;
 		
-		for(; (from_z < to_z) ? (traj_z <= to_z) : (traj_z >= to_z); (from_z < to_z) ? (traj_z += TRAJ_RES) : (traj_z -= TRAJ_RES) ) {
+		for(; (from_z < to_z) ? (traj_z <= to_z) : (traj_z >= to_z); (from_z < to_z) ? (traj_z += TRAJ_RES) : (traj_z -= TRAJ_RES) ) { //iterate trough the displacement on the z axis in TRAJ_RES sized steps
 			
-			traj_calc_step (step_idx, traj_ctrl.d, traj_x, traj_y, traj_z );
+			traj_calc_step (step_idx, traj_ctrl.d, traj_x, traj_y, traj_z ); //generates the patterns for the way point
 			step_idx++;
-			if(step_idx >= TRAJ_MAXSTEPS) {
+			if(step_idx >= TRAJ_MAXSTEPS) { // limits the maximum number of way points to not overflow the output buffer
 				break;
 			}
 		}
 	}
 	
-	return step_idx;
+	return step_idx; //return the number of way points
 }
 
-/*
-
-*/
+/**
+ * Calculates the pattern to focus on one coordinate and fills one position of the output buffer with it.
+ * @param step_idx The index of the output buffer that will be assigned
+ * @param duty_cycle The discrete duty cycle of the signal ([0,255] = [0°,360°])
+ * @param focus_x The focus coordinate on the x axis (in millimeters)
+ * @param focus_y The focus coordinate on the y axis (in millimeters)
+ * @param focus_z The focus coordinate on the z axis (in millimeters)
+ */
 void traj_calc_step (uint8_t step_idx, const uint8_t duty_cycle, const uint8_t focus_x, const uint8_t focus_y, const uint8_t focus_z ) {
 	
 	uint8_t x, y, phase_idx, bit, pin, port_idx = 0;
 	
+	//set all port registers to LOW
 	for(phase_idx = 0; phase_idx < ARRAY_PHASERES; phase_idx++) {
 		traj_port_buffer[step_idx][phase_idx][0] = 0x00; //PORTA
 		traj_port_buffer[step_idx][phase_idx][1] = 0x00; //PORTB
@@ -481,13 +519,15 @@ void traj_calc_step (uint8_t step_idx, const uint8_t duty_cycle, const uint8_t f
 	else {
 		transd_array_calcflat( /*transd_array,*/ duty_cycle );
 	}
-		
+	
+	//the buffer starts with all zeros. As the matrix is iterated, the bits of the port registers are assigned (ored)
 	for(x = 0; x < ARRAY_SIZE_X; x++){
 		for(y = 0; y < ARRAY_SIZE_Y; y++){
 			
 			//gets the pin that the transducer is connected to
 			pin = transd_array[x][y].port_pin;
 			
+			//gets the port register for the pin
 			if(PINS[pin].bank_ptr == &PORTA) port_idx = 0;
 			if(PINS[pin].bank_ptr == &PORTB) port_idx = 1;
 			if(PINS[pin].bank_ptr == &PORTC) port_idx = 2;
@@ -499,16 +539,17 @@ void traj_calc_step (uint8_t step_idx, const uint8_t duty_cycle, const uint8_t f
 			if(PINS[pin].bank_ptr == &PORTK) port_idx = 8;
 			if(PINS[pin].bank_ptr == &PORTL) port_idx = 9;
 			
+			//updates the pin status of the current trajectory index for each phase index
 			for(phase_idx = 0; phase_idx < ARRAY_PHASERES; phase_idx++){
 			
-				//access the pattern and gets the value for the bit representing the current step
+				//access the pattern and gets the value for the bit representing the current phase index
 				bit = transd_array[x][y].pattern & (1 << phase_idx);
 				
-				//updates only the current pin
+				//updates only the current pin and port
 				if(bit) {
-					traj_port_buffer[step_idx][phase_idx][port_idx] |= PINS[pin].bit_msk;
+					traj_port_buffer[step_idx][phase_idx][port_idx] |= PINS[pin].bit_msk; 
 				}
-				/* no need to set as low because all the bits of the buffer are set to zero
+				/* no need to set as low because all the bits of the buffer are set to zero first
 				else {
 					traj_port_buffer[step_idx][phase_idx][port_idx] &= ~PINS[pin].bit_idx;
 				}
@@ -517,112 +558,77 @@ void traj_calc_step (uint8_t step_idx, const uint8_t duty_cycle, const uint8_t f
 		}
 	}
 	
-#ifdef DEBUG_TRAJ
+	#ifdef DEBUG_TRAJ
 	debug_traj_step (step_idx, focus_x, focus_y, focus_z);
-#endif
+	#endif
 	
-#ifdef DEBUG_PATTERN
+	#ifdef DEBUG_PATTERN
 	debug_pattern ();
-#endif
+	#endif
 
 } //traj_calc_step
 
-/*
-
-*/
-uint8_t traj_solve_y (uint8_t x, uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2 ) {
-	
-	int32_t _x, _y, _x1, _y1, _x2, _y2;
-	uint8_t y;
-	
-	//using 2 decimal places fixed point (force cast before multiplication)
-	_x  = int32_t( x) * 100; 
-	_x1 = int32_t(x1) * 100; 
-	_y1 = int32_t(y1) * 100; 
-	_x2 = int32_t(x2) * 100; 
-	_y2 = int32_t(y2) * 100;
-	
-	/*
-		Find a coordinate of a line trough two points
-		
-		from geometric analysis, the slope m for the line that pass trough the points (x1,y1) and (x2,y2) is m = (y2 - y1)/(x2 - x1) (1)
-		the same equation can be reorganized to find (x3, y3) given (x1,y1), x3 and m: y3 = m * (x3 - x1) + y1 (2)
-		replacing m from (1) in (2) gives y3 = (y2 - y1)/(x2 - x1) * (x3 - x1) + y1 (3)
-		the equation bellow is (3) reorganized to decrease the rounding error in the division (we are using integers)
-	*/
-	_y = ((_y2 - _y1) * (_x - _x1))/(_x2 - _x1) + _y1;
-	
-	//round for 2 decimal places
-	if(_y % 100 >= 50) {
-		_y += 50;
-	}
-	
-	//using 2 decimal places fixed point
-	_y /= 100;
-	
-	//the point will always be at the first quadrant (x >= 0 and y >= 0)
-	y = uint8_t(_y);
-	
-	return y;
-	
-} //traj_solve_y
-
-/*
-
-*/
-uint8_t traj_solve_z (uint8_t x, uint8_t x1, uint8_t z1, uint8_t x2, uint8_t z2 ) {
-	
-	return traj_solve_y (x, x1, z1, x2, z2 );	
-} //traj_solve_y
-
-/*
-
-*/
+/**
+ * Calculates the time interval before switching to the next way point of the trajectory.
+ * It's tied to the same methodology used in the traj_calc function. 
+ * @param s The speed of the displacement (in millimeters per second)
+ * @param from_x The initial coordinate on the x axis (in millimeters)
+ * @param from_y The initial coordinate on the y axis (in millimeters)
+ * @param from_z The initial coordinate on the z axis (in millimeters)
+ * @param to_x The final coordinate on the x axis (in millimeters)
+ * @param to_y The final coordinate on the y axis (in millimeters)
+ * @param to_z The final coordinate on the z axis (in millimeters)
+ * @returns The time interval between way points in microseconds
+ */
 uint32_t traj_calc_speed (const uint8_t s, const uint8_t from_x, const uint8_t from_y, const uint8_t from_z, const uint8_t to_x, const uint8_t to_y, const uint8_t to_z ){
 	
 	uint32_t distance, speed_axys, interval;
 	int8_t Dx, Dy, Dz;
 	
+	//this values can be smaller than zero!
 	Dx = to_x - from_x;
 	Dy = to_y - from_y;
 	Dz = to_z - from_z;
 	
 	distance = (Dx * Dx) + (Dy * Dy) + (Dz * Dz); //squared distance
 	//distance *= 100; //multiplies by 10 squared to "keep" one decimal place after the square root.
-	distance = transd_sqrt_int(distance); //x10. After taking the square root, the distance is not in milimeters
+	distance = transd_sqrt_int(distance); 
 	//distance /= 10;
 	
-	if( from_x != to_x ) { /* if the trajectory isn't perperdicular to the x axys */
+	if( from_x != to_x ) { /* if the trajectory isn't perpendicular to the x axis */
 		
-		speed_axys = (s * Dx) / distance;
+		speed_axys = (s * Dx) / distance; //solve the equivalent speed on the indexing axis
 	}
-	else if( from_y != to_y ) { /* if the trajectory is perperdicular to the x axys but isn't perperdicular to the y axys */
+	else if( from_y != to_y ) { /* if the trajectory is perpendicular to the x axis but isn't perpendicular to the y axis */
 		
-		speed_axys = (s * Dy) / distance;
+		speed_axys = (s * Dy) / distance; //solve the equivalent speed on the indexing axis
 	}
-	else { /* if the trajectory is perperdicular to the x and y axys */
+	else { /* if the trajectory is perpendicular to the x and y axis */
 		
-		speed_axys = s;
+		speed_axys = s; //solve the equivalent speed on the indexing axis
 	}
 	
-  if( speed_axys == 0 ) { /* if the speed on the chosen axys is smaller than 1 */
-    
-    speed_axys = 1;
-  }
+	if( speed_axys == 0 ) { /* if the speed on the chosen axis is smaller than 1 */
+		speed_axys = 1;
+	}
   
-	interval = (TRAJ_RES * 1E6) / speed_axys;
+	//v = d/t
+	interval = (TRAJ_RES * 1E6) / speed_axys; //assumes that the distance between each way point on the indexing axis is TRAJ_RES. The 1E6 will transform speed from mm/s to mm/us
 	
 
-#ifdef DEBUG_TRAJ
+	#ifdef DEBUG_TRAJ
 	debug_traj_speed (s, from_x, from_y, from_z, to_x, to_y, to_z, Dx, Dy, Dz, distance, speed_axys, interval);
-#endif
+	#endif
 	
 	return interval;
 }
 
-/*
-
-*/
+/**
+ * Checks if there are commands in the serial buffer and break it in tokens to parse them.
+ * Each token is separated by a SINGLE space. The valid tokens are described in the input_parse_token function.
+ * Examples of valid input commands: "m x10 y20 z30 d127 s10", "r x10 y20 z30 d64 s15", "a x10 y20 z30 d64", "f d127", "i".
+ * @returns 1 if a command was read, 0 otherwise
+ */
 uint8_t input_parse () {
 	
 	char buffer[64];
@@ -634,19 +640,19 @@ uint8_t input_parse () {
 	
 	if(Serial.available()) {
 		
-		buffer_size =  Serial.readBytes(buffer,63);
-		buffer[buffer_size] = '\0';
+		buffer_size = Serial.readBytes(buffer,63);
+		buffer[buffer_size] = '\0'; //put null character at the end to treat the buffer as a string
 		buffer_size++;
 		
 		start_idx = end_idx = 0;
-		while (start_idx < buffer_size) {
+		while (start_idx < buffer_size) { //iterate trough the tokens of the string
 						
-			while( buffer[start_idx + end_idx] != ' ' && buffer[start_idx + end_idx] != '\0' ) {
+			while( buffer[start_idx + end_idx] != ' ' && buffer[start_idx + end_idx] != '\0' ) { //iterate the characters of the string until find a single space or the end of the string
 				end_idx++;
 			}
-			buffer[start_idx + end_idx] = '\0';
-			input_parse_token(&buffer[start_idx]);
-			start_idx += end_idx + 1; end_idx = 0;
+			buffer[start_idx + end_idx] = '\0'; //puts a null character where the space was found so the input_parse_token will only use the current token
+			input_parse_token(&buffer[start_idx]); //sends the address of the start of the current token
+			start_idx += end_idx + 1; end_idx = 0; //updates the start index to the next token (remember to jump the null character)
 		}
 		
 		return 1;
@@ -656,9 +662,36 @@ uint8_t input_parse () {
 		
 } //input_parse
 
-/*
-
-*/
+/**
+ * Reads and interprets one command token. Updates the global parameters.
+ * The token is divided in "Mode" and "Parameter". 
+ *
+ * The Parameters will change a meaningful data for the execution of a Mode. 
+ * If the same Parameter is send twice in one command, only the last information will be saved.
+ * A Parameter is followed by a decimal number representing it's value.
+ * The list of valid Parameters:
+ * |Syntax|Description|Domain|
+ * |x[integer]|Sets the x focus coordinate. Value in millimeters|[0,255]|
+ * |y[integer]|Sets the y focus coordinate. Value in millimeters|[0,255]|
+ * |z[integer]|Sets the z focus coordinate. Value in millimeters|[0,255]|
+ * |d[integer]|Sets the duty cycle. Values from 0 to 255, equating to 0% to 100%|[0,255]|
+ * |s[integer]|Sets the speed of the displacement. Value in millimeters per second|[1,255]|
+ * 
+ * The Modes will perform a action in the system.
+ * Only one Mode must be sent in the same command. If more than one Mode is send, only the last one will be executed.
+ * Some Modes will demand mandatory parameters to be set. They can be set in the same command or can by set in previous commands.
+ * The list of valid Modes:
+ * |Syntax|Action|Parameters|
+ * |m|Set the move mode (moves from the current position to the desired position then deactivates)|x, y, z, d, s|
+ * |r|Set the relocate mode (moves from the current position to the desired position and keep active)|x, y, z, d, s|
+ * |a|Activates the focal point at the desired position|x, y, z, d|
+ * |f|Activates the flat mode|d|
+ * |i|Deactivates the current mode||
+ *
+ * Examples of valid tokens: "m", "r", "a", "f", "i", "x10", "y20", "z30", "d128", "s1".
+ *
+ * @param token The address of the token
+ */
 void input_parse_token (char *token) {
 	
 	if(token == NULL) return;
@@ -712,9 +745,10 @@ void input_parse_token (char *token) {
 	}
 } //input_parse_token
 
-/*
-
-*/
+/**
+ * Executes the command performing the action set by a Mode or changing a Parameter.
+ * It's not recommended to apply a new command before a "i" command is sent or the current movement is finished.
+ */
 void input_execute (){
 	
 	uint32_t interval;
@@ -725,7 +759,7 @@ void input_execute (){
 			traj_ctrl.lasty == traj_ctrl.y &&
 			traj_ctrl.lastz == traj_ctrl.z) { /* no movement? */
 				
-				if(mode == MODE_MOVE_OFF) {
+				if(mode == MODE_MOVE_OFF) { //if a MODE_MOVE_OFF mode is activated but the origin and destiny are the same point, turns the output off immediately
 					traj_ctrl.lastx = traj_ctrl.x;
 					traj_ctrl.lasty = traj_ctrl.y;
 					traj_ctrl.lastz = traj_ctrl.z;
@@ -734,7 +768,7 @@ void input_execute (){
 					disableTimer4 ();
 					output_reset ();
 				}
-				else {
+				else { //if a MODE_MOVE_ON mode is activated but the origin and destiny are the same point, calculates the output for the destiny and turns the output on. It's equivalent to a MODE_ON command
 					traj_calc_step (0, traj_ctrl.d, traj_ctrl.x, traj_ctrl.y, traj_ctrl.z );
 					
 					traj_step_idx = 0;
@@ -750,26 +784,26 @@ void input_execute (){
 				}
 			}
 		else { /* movement */
-			traj_step_num = traj_calc (traj_ctrl.lastx, traj_ctrl.lasty, traj_ctrl.lastz, traj_ctrl.x, traj_ctrl.y, traj_ctrl.z );
+			traj_step_num = traj_calc (traj_ctrl.lastx, traj_ctrl.lasty, traj_ctrl.lastz, traj_ctrl.x, traj_ctrl.y, traj_ctrl.z ); //calculates the trajectory and fills the output buffer
 			
-			interval = traj_calc_speed (traj_ctrl.s, traj_ctrl.lastx, traj_ctrl.lasty, traj_ctrl.lastz, traj_ctrl.x, traj_ctrl.y, traj_ctrl.z );
+			interval = traj_calc_speed (traj_ctrl.s, traj_ctrl.lastx, traj_ctrl.lasty, traj_ctrl.lastz, traj_ctrl.x, traj_ctrl.y, traj_ctrl.z ); //calculates the time interval between way points
 					
-			setTimer3 (interval);
+			setTimer3 (interval); //sets the timer 3 that will control the speed of movement
 			
-			traj_step_idx = 0;
+			traj_step_idx = 0; //resets the output buffer indexes
 			array_phase_idx = 0;
 			
 			traj_ctrl.lastx = traj_ctrl.x;
 			traj_ctrl.lasty = traj_ctrl.y;
 			traj_ctrl.lastz = traj_ctrl.z;
 			
-      enableTimer4 ();
+			enableTimer4 (); //enables the output and the movement
 			enableTimer3 ();
 		}
 	}
 	else if(mode == MODE_ON) {
 		
-		traj_calc_step (0, traj_ctrl.d, traj_ctrl.x, traj_ctrl.y, traj_ctrl.z );
+		traj_calc_step (0, traj_ctrl.d, traj_ctrl.x, traj_ctrl.y, traj_ctrl.z ); //this mode uses the index 0 of the output buffer
 		
 		traj_step_idx = 0;
 		traj_step_num = 1;
@@ -780,12 +814,12 @@ void input_execute (){
 		traj_ctrl.lastz = traj_ctrl.z;
 		
 		
-		disableTimer3 ();
+		disableTimer3 (); //no movement required
 		enableTimer4 ();
 	}
 	else if(mode == MODE_FLAT) {
 		
-		traj_calc_step (0, traj_ctrl.d, 0, 0, 0 );
+		traj_calc_step (0, traj_ctrl.d, 0, 0, 0 ); //this mode uses the index 0 of the output buffer
 		
 		traj_step_idx = 0;
 		traj_step_num = 1;
@@ -798,21 +832,21 @@ void input_execute (){
 		traj_ctrl.lasty = traj_ctrl.y;
 		traj_ctrl.lastz = traj_ctrl.z;
 		
-		disableTimer3 ();
+		disableTimer3 (); //no movement required
 		enableTimer4 ();
 	}
 	else if(mode == MODE_OFF) {
 		
-		disableTimer3 ();
+		disableTimer3 (); //disables the output and the movement
 		disableTimer4 ();
 		output_reset ();
 	}
 	
 } //input_execute
 
-/*
-
-*/
+/**
+ * Initializes the matrix array from the Ultrasonic.c with the designated pin numbers and phase compensation
+ */
 void transd_array_load ( /*t_transd_array *transd_array(*/ ){
 	
 	uint8_t x, y;
@@ -824,11 +858,14 @@ void transd_array_load ( /*t_transd_array *transd_array(*/ ){
       //Serial.println(pgm_read_byte_near(ARRAY_CALIBRATION + (x*ARRAY_SIZE_Y + y)*2));
       //Serial.println(pgm_read_byte_near(ARRAY_CALIBRATION[x][y][0]));
       //Serial.println(ARRAY_CALIBRATION[x][y][0]);
-			transd_array_set( /*transd_array,*/ x, y, pgm_read_byte_near(&(ARRAY_CALIBRATION[x][y][0])), pgm_read_byte_near(&(ARRAY_CALIBRATION[x][y][1])) );
+			transd_array_set( /*transd_array,*/ x, y, pgm_read_byte_near(&(ARRAY_CALIBRATION[x][y][0])), pgm_read_byte_near(&(ARRAY_CALIBRATION[x][y][1])) ); //special functions to read from PROGMEM
 		}
 	}
 } //transd_array_load
 
+/**
+ * Sets all output ports as LOW
+ */
 void output_reset () {
 	//sets all pins as low
 	PORTA = 0;
@@ -846,9 +883,11 @@ void output_reset () {
 }
 
 #ifdef DEBUG_PINS
-/*
-
-*/
+/**
+ * Use to debug the pin assignment using the port registers. 
+ * Will set each pin high (starting  from pin 6) sequentially. 
+ * The value defined by DEBUG_PINS is the delay between pins in microseconds.
+ */
 void debug_pins () {
 	uint8_t pin;
 	
@@ -873,7 +912,7 @@ void debug_pins () {
 		else {
 			
 			//sets the current pin as high
-			*(PINS[pin].bank_ptr) |= PINS[pin].bit_msk;
+			*(PINS[pin].bank_ptr) |= PINS[pin].bit_msk; //the goal is to use the mapping define by PINS to test if the mapping is correct
 			Serial.print(F("Testing pin "));
 			Serial.println(pin);
 			delay(DEBUG_PINS);
@@ -888,9 +927,11 @@ void debug_pins () {
 #endif
 
 #ifdef DEBUG_MAP
-/*
-
-*/
+/**
+ * Use to debug the pin mapping of each element of the matrix. 
+ * Will set the pin for each transducer high in the matrix order {(0,0),(0,1),(0,2),(1,0),(1,1),(1,2),...}. 
+ * The value defined by DEBUG_MAP is the delay between pins in microseconds.
+ */
 void debug_map () {
 	
 	uint8_t x, y;
@@ -910,7 +951,7 @@ void debug_map () {
 
 			output_reset ();
 			
-			pin = transd_array[x][y].port_pin;
+			pin = transd_array[x][y].port_pin; //the goal is to use the mapping loaded from ARRAY_CALIBRATION to the transducer array to test if the mapping is correct
 		
 			Serial.print(F("Testing ["));
 			Serial.print(x);
@@ -932,9 +973,10 @@ void debug_map () {
 #endif
 
 #ifdef DEBUG_INPUT
-/*
-
-*/
+/**
+ * Use to debug the serial input parsing. 
+ * Will echo the interpretation of the inputed string
+ */
 void debug_input () {
 	
 	Serial.println(F("DEBUG ROUTINE - INPUT"));
@@ -964,16 +1006,19 @@ void debug_input () {
 #endif
 
 #ifdef DEBUG_PATTERN
-/*
-
-*/
+/**
+ * Use to debug the pattern generation routine. 
+ * Will serial out the pattern for each transducer of the matrix when the pattern is calculated.
+ * This function must be called after the pattern calculation is done because it will read directly from the transducer array.
+ * A "#" means output HIGH and a "_" means output LOW.
+ */
 void debug_pattern () {
 	
 	uint8_t i,x,y;
 	
 	Serial.println(F("DEBUG ROUTINE - PATTERN"));
 	
-	//prints the header of the collumns
+	//prints the header of the columns
 	Serial.println(F("position_x;position_y;port_pin;phase_comp;pattern"));
 	
 	for(x = 0; x < ARRAY_SIZE_X; x++){
@@ -987,7 +1032,7 @@ void debug_pattern () {
 			Serial.print(F(";"));
 			Serial.print(transd_array[x][y].phase_comp);
 			Serial.print(F(";"));
-			//converts the 16 bit pattern to a 16 characters string
+			//converts the 16 bit pattern to a 16 characters string (not 16, but ARRAY_PHASERES)
 			//the '#' represents a active output and the '_' represents a inactive output
 			for(i = 0; i < ARRAY_PHASERES; i++) {
 
@@ -1008,21 +1053,27 @@ void debug_pattern () {
 #endif
 
 #ifdef DEBUG_TRAJ
-/*
-
-*/
+/**
+ * Use to debug the trajectory planning routine. 
+ * Will serial out a header for the trajectory data printed by debug_traj_step.
+ */
 void debug_traj_header () {
 	
 	Serial.println(F("DEBUG ROUTINE - TRAJ"));
 	
-	//prints the header of the collumns
+	//prints the header of the columns
 	Serial.println(F("step_idx;position_x;position_y;position_z"));
 	
 } //debug_traj_header
 
-/*
-
-*/
+/**
+ * Use to debug the trajectory planning routine. 
+ * Will serial out the trajectory way points.
+ * @param step_idx The index of the output buffer that will be read
+ * @param focus_x The focus coordinate on the x axis for that index
+ * @param focus_y The focus coordinate on the y axis for that index
+ * @param focus_z The focus coordinate on the z axis for that index
+ */
 void debug_traj_step (const uint8_t step_idx, const uint8_t focus_x, const uint8_t focus_y, const uint8_t focus_z) {
 	
 	Serial.print(step_idx);
@@ -1030,29 +1081,43 @@ void debug_traj_step (const uint8_t step_idx, const uint8_t focus_x, const uint8
 	Serial.print(focus_x);
 	Serial.print(F(";"));
 	Serial.print(focus_y);
-  Serial.print(F(";"));
-  Serial.print(focus_z);
+	Serial.print(F(";"));
+	Serial.print(focus_z);
 	Serial.print(F("\n"));
 	
 } //debug_traj_step
 
-/*
-
-*/
+/**
+ * Use to debug the trajectory planning routine. 
+ * Will serial out the speed calculation data.
+ * @param s The target displacement speed (in millimeters per second).
+ * @param from_x The initial coordinate on the x axis (in millimeters)
+ * @param from_y The initial coordinate on the y axis (in millimeters)
+ * @param from_z The initial coordinate on the z axis (in millimeters)
+ * @param to_x The final coordinate on the x axis (in millimeters)
+ * @param to_y The final coordinate on the y axis (in millimeters)
+ * @param to_z The final coordinate on the z axis (in millimeters)
+ * @param Dx The distance along the x axis (in millimeters)
+ * @param Dy The distance along the y axis (in millimeters)
+ * @param Dz The distance along the z axis (in millimeters)
+ * @param distance The distance between the initial and final points (in millimeters)
+ * @param speed_axys The calculated displacement speed along the indexing axis (in millimeters per second).
+ * @param interval The time interval between way points (in microseconds)
+ */
 void debug_traj_speed (const uint8_t s, const uint8_t from_x, const uint8_t from_y, const uint8_t from_z, const uint8_t to_x, const uint8_t to_y, const uint8_t to_z, const int8_t Dx, const int8_t Dy, const int8_t Dz, const uint32_t distance, const uint32_t speed_axys, const uint32_t interval) {
 	
 	Serial.print(F("s: "));			Serial.println(s);
-	Serial.print(F("from_x: "));		Serial.println(from_x);
-	Serial.print(F("from_y: "));		Serial.println(from_y);
-	Serial.print(F("from_z: "));		Serial.println(from_z);
+	Serial.print(F("from_x: "));	Serial.println(from_x);
+	Serial.print(F("from_y: "));	Serial.println(from_y);
+	Serial.print(F("from_z: "));	Serial.println(from_z);
 	Serial.print(F("to_x: "));		Serial.println(to_x);
 	Serial.print(F("to_y: "));		Serial.println(to_y);
 	Serial.print(F("to_z: "));		Serial.println(to_z);
-	Serial.print(F("Dx: "));			Serial.println(Dx);
-	Serial.print(F("Dy: "));			Serial.println(Dy);
-	Serial.print(F("Dz: "));			Serial.println(Dz);
+	Serial.print(F("Dx: "));		Serial.println(Dx);
+	Serial.print(F("Dy: "));		Serial.println(Dy);
+	Serial.print(F("Dz: "));		Serial.println(Dz);
 	Serial.print(F("distance: "));	Serial.println(distance);
-	Serial.print(F("speed_axys: "));	Serial.println(speed_axys);
+	Serial.print(F("speed_axys: "));Serial.println(speed_axys);
 	Serial.print(F("interval: "));	Serial.println(interval);
 
 	Serial.println(F("End of routine"));
@@ -1060,9 +1125,12 @@ void debug_traj_speed (const uint8_t s, const uint8_t from_x, const uint8_t from
 #endif
 
 #ifdef DEBUG_TIMER
-/*
-
-*/
+/**
+ * Use to debug the transducer signal generation (waveform, frequency accuracy, jitter). 
+ * Will configure the matrix to output the defined pattern on all transducers. 
+ * Note that the pattern generation will be overridden and the phase compensation will be disabled. 
+ * The value defined by DEBUG_TIMER is a binary unsigned representing the pattern to be outputted (0xAAAA = #_#_#_#_#_#_#_#_)
+ */
 void debug_timer () {
 	
 	uint8_t x, y, phase_idx, bit, pin, port_idx = 0;
@@ -1110,7 +1178,7 @@ void debug_timer () {
 		}
 	}
 	
-	traj_step_idx = 0;
+	traj_step_idx = 0; //locks the step index at 0 to repeat the same pattern
 	traj_step_num = 1;
 	array_phase_idx = 0;
 	mode = MODE_ON;
