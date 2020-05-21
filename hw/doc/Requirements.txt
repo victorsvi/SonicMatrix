@@ -1,8 +1,7 @@
-Fazer protoboard e sketch para testar 1 canal
+-Fazer protoboard e sketch para testar 1 canal-
 Power Supply 12-20v 
 Polarity protection with diode
 regulador 9 ou 12v p/ vin arduino c/ jumper pra pular e usar usb
-fazer skecth pra testar o transd
 Utilizar apenas uma placa
 Como testar desvio de fase
 Como testar polaridade do transdutor
