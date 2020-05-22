@@ -1,0 +1,4 @@
+componentes smd: top layer, normal
+componentes pth: top layer, espelhado
+texto na top: normal
+texto na bottom: espelhado
