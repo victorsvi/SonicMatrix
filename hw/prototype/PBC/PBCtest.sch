@@ -5539,8 +5539,8 @@ Diameter: 16mm</description>
 <part name="U1" library="TC4427EOA" deviceset="TC4427EOA" device=""/>
 <part name="V4" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="VCC" device="" value="V20"/>
 <part name="GND9" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="U$3" library="ultrasonic" deviceset="TCT40-16" device=""/>
-<part name="U$4" library="ultrasonic" deviceset="TCT40-16" device=""/>
+<part name="T1" library="ultrasonic" deviceset="TCT40-16" device=""/>
+<part name="T2" library="ultrasonic" deviceset="TCT40-16" device=""/>
 <part name="C1" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="C-EU" device="C1206" package3d_urn="urn:adsk.eagle:package:23618/2" value="2.2uF"/>
 <part name="C33" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="C-EU" device="C1206" package3d_urn="urn:adsk.eagle:package:23618/2" value="2.2uF"/>
 <part name="GND40" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
@@ -5606,11 +5606,11 @@ Diameter: 16mm</description>
 <instance part="GND9" gate="1" x="200.66" y="114.3" smashed="yes">
 <attribute name="VALUE" x="198.12" y="111.76" size="1.778" layer="96"/>
 </instance>
-<instance part="U$3" gate="G$1" x="220.98" y="121.92" smashed="yes" rot="MR0">
+<instance part="T1" gate="G$1" x="220.98" y="121.92" smashed="yes" rot="MR0">
 <attribute name="NAME" x="219.71" y="119.38" size="1.27" layer="95" rot="MR0"/>
 <attribute name="VALUE" x="219.71" y="116.84" size="1.27" layer="96" rot="MR0"/>
 </instance>
-<instance part="U$4" gate="G$1" x="220.98" y="137.16" smashed="yes" rot="MR0">
+<instance part="T2" gate="G$1" x="220.98" y="137.16" smashed="yes" rot="MR0">
 <attribute name="NAME" x="219.71" y="134.62" size="1.27" layer="95" rot="MR0"/>
 <attribute name="VALUE" x="219.71" y="132.08" size="1.27" layer="96" rot="MR0"/>
 </instance>
@@ -5649,26 +5649,26 @@ Diameter: 16mm</description>
 <nets>
 <net name="PA6" class="0">
 <segment>
-<pinref part="U1" gate="A" pin="IN_A"/>
-<wire x1="160.02" y1="134.62" x2="144.78" y2="134.62" width="0.1524" layer="91"/>
-<label x="147.32" y="134.62" size="1.778" layer="95"/>
-</segment>
-<segment>
 <wire x1="15.24" y1="55.88" x2="27.94" y2="55.88" width="0.1524" layer="91"/>
 <label x="17.78" y="55.88" size="1.778" layer="95"/>
 <pinref part="SVI10" gate="1" pin="7"/>
 </segment>
-</net>
-<net name="PA7" class="0">
 <segment>
 <pinref part="U1" gate="A" pin="IN_B"/>
 <wire x1="160.02" y1="132.08" x2="144.78" y2="132.08" width="0.1524" layer="91"/>
 <label x="147.32" y="132.08" size="1.778" layer="95"/>
 </segment>
+</net>
+<net name="PA7" class="0">
 <segment>
 <pinref part="SVI10" gate="1" pin="8"/>
 <wire x1="15.24" y1="58.42" x2="27.94" y2="58.42" width="0.1524" layer="91"/>
 <label x="17.78" y="58.42" size="1.778" layer="95"/>
+</segment>
+<segment>
+<pinref part="U1" gate="A" pin="IN_A"/>
+<wire x1="160.02" y1="134.62" x2="144.78" y2="134.62" width="0.1524" layer="91"/>
+<label x="147.32" y="134.62" size="1.778" layer="95"/>
 </segment>
 </net>
 <net name="GND" class="0">
@@ -5716,11 +5716,11 @@ Diameter: 16mm</description>
 <wire x1="200.66" y1="121.92" x2="200.66" y2="116.84" width="0.1524" layer="91"/>
 <label x="203.2" y="121.92" size="1.778" layer="95"/>
 <pinref part="GND9" gate="1" pin="GND"/>
-<pinref part="U$4" gate="G$1" pin="P1"/>
+<pinref part="T2" gate="G$1" pin="P1"/>
 <wire x1="215.9" y1="137.16" x2="213.36" y2="137.16" width="0.1524" layer="91"/>
 <wire x1="213.36" y1="137.16" x2="213.36" y2="121.92" width="0.1524" layer="91"/>
 <wire x1="213.36" y1="121.92" x2="200.66" y2="121.92" width="0.1524" layer="91"/>
-<pinref part="U$3" gate="G$1" pin="P1"/>
+<pinref part="T1" gate="G$1" pin="P1"/>
 <wire x1="215.9" y1="121.92" x2="213.36" y2="121.92" width="0.1524" layer="91"/>
 <junction x="213.36" y="121.92"/>
 <pinref part="U1" gate="A" pin="GND"/>
@@ -5845,7 +5845,7 @@ Diameter: 16mm</description>
 <pinref part="U1" gate="A" pin="!OUT_A"/>
 <wire x1="195.58" y1="134.62" x2="210.82" y2="134.62" width="0.1524" layer="91"/>
 <wire x1="210.82" y1="134.62" x2="210.82" y2="139.7" width="0.1524" layer="91"/>
-<pinref part="U$4" gate="G$1" pin="P0"/>
+<pinref part="T2" gate="G$1" pin="P0"/>
 <wire x1="210.82" y1="139.7" x2="215.9" y2="139.7" width="0.1524" layer="91"/>
 <label x="200.66" y="134.62" size="1.778" layer="95"/>
 </segment>
@@ -5855,7 +5855,7 @@ Diameter: 16mm</description>
 <pinref part="U1" gate="A" pin="!OUT_B"/>
 <wire x1="195.58" y1="132.08" x2="210.82" y2="132.08" width="0.1524" layer="91"/>
 <wire x1="210.82" y1="132.08" x2="210.82" y2="124.46" width="0.1524" layer="91"/>
-<pinref part="U$3" gate="G$1" pin="P0"/>
+<pinref part="T1" gate="G$1" pin="P0"/>
 <wire x1="210.82" y1="124.46" x2="215.9" y2="124.46" width="0.1524" layer="91"/>
 <label x="200.66" y="132.08" size="1.778" layer="95"/>
 </segment>

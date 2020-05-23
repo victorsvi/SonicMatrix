@@ -6,7 +6,7 @@
 <setting alwaysvectorfont="no"/>
 <setting verticaltext="up"/>
 </settings>
-<grid distance="0.1" unitdist="inch" unit="inch" style="lines" multiple="1" display="no" altdistance="0.01" altunitdist="inch" altunit="inch"/>
+<grid distance="20" unitdist="mil" unit="mil" style="lines" multiple="1" display="no" altdistance="0.01" altunitdist="inch" altunit="inch"/>
 <layers>
 <layer number="1" name="Top" color="4" fill="1" visible="no" active="no"/>
 <layer number="2" name="Route2" color="1" fill="3" visible="no" active="no"/>
@@ -91,14 +91,14 @@
 <wire x1="3.71" y1="2.75" x2="3.71" y2="-2.75" width="0.05" layer="39"/>
 <text x="-3.575" y="-2.702" size="1.27" layer="27" align="top-left">&gt;VALUE</text>
 <text x="-3.575" y="2.702" size="1.27" layer="25">&gt;NAME</text>
-<smd name="1" x="-2.67" y="1.905" dx="1.58" dy="0.6" layer="1" roundness="25"/>
-<smd name="2" x="-2.67" y="0.635" dx="1.58" dy="0.6" layer="1" roundness="25"/>
-<smd name="3" x="-2.67" y="-0.635" dx="1.58" dy="0.6" layer="1" roundness="25"/>
-<smd name="4" x="-2.67" y="-1.905" dx="1.58" dy="0.6" layer="1" roundness="25"/>
-<smd name="5" x="2.67" y="-1.905" dx="1.58" dy="0.6" layer="1" roundness="25"/>
-<smd name="6" x="2.67" y="-0.635" dx="1.58" dy="0.6" layer="1" roundness="25"/>
-<smd name="7" x="2.67" y="0.635" dx="1.58" dy="0.6" layer="1" roundness="25"/>
-<smd name="8" x="2.67" y="1.905" dx="1.58" dy="0.6" layer="1" roundness="25"/>
+<smd name="1" x="-2.924" y="1.905" dx="2.088" dy="0.6" layer="1" roundness="25"/>
+<smd name="2" x="-2.924" y="0.635" dx="2.088" dy="0.6" layer="1" roundness="25"/>
+<smd name="3" x="-2.924" y="-0.635" dx="2.088" dy="0.6" layer="1" roundness="25"/>
+<smd name="4" x="-2.924" y="-1.905" dx="2.088" dy="0.6" layer="1" roundness="25"/>
+<smd name="5" x="2.924" y="-1.905" dx="2.088" dy="0.6" layer="1" roundness="25"/>
+<smd name="6" x="2.924" y="-0.635" dx="2.088" dy="0.6" layer="1" roundness="25"/>
+<smd name="7" x="2.924" y="0.635" dx="2.088" dy="0.6" layer="1" roundness="25"/>
+<smd name="8" x="2.924" y="1.905" dx="2.088" dy="0.6" layer="1" roundness="25"/>
 </package>
 </packages>
 <symbols>
@@ -4442,231 +4442,6 @@ Source: AVX .. aphvc.pdf</description>
 </deviceset>
 </devicesets>
 </library>
-<library name="con-jack" urn="urn:adsk.eagle:library:154">
-<description>&lt;b&gt;Jacks&lt;/b&gt;&lt;p&gt;
-Power Connectors&lt;br&gt;
-Phone Connectors&lt;br&gt;
-Cinch Connectors&lt;br&gt;
-&lt;author&gt;Created by librarian@cadsoft.de&lt;/author&gt;</description>
-<packages>
-<package name="SPC4078" urn="urn:adsk.eagle:footprint:7489/1" library_version="1">
-<description>&lt;b&gt;DC POWER JACK 2.5mm&lt;/b&gt; Right Angle, Through Hole, Rated 5A at 16VDC, PC Terminals&lt;p&gt;
-Source: www.spctechnology.com .. 84N1162.pdf&lt;br&gt;
-Distributor: &lt;b&gt;Farnell (www.Farnell.de)&lt;/b&gt;&lt;br&gt;
-Created by Robert Siegler</description>
-<wire x1="-10.75" y1="-4.5" x2="-10.75" y2="-3.2" width="0.1" layer="21"/>
-<wire x1="-10.75" y1="-3.2" x2="-10.75" y2="3.2" width="0.1" layer="21"/>
-<wire x1="-10.75" y1="3.2" x2="-10.75" y2="4.5" width="0.1" layer="21"/>
-<wire x1="-7.25" y1="-4.5" x2="-7.25" y2="4" width="0.1" layer="21"/>
-<wire x1="-7.25" y1="4" x2="-7.25" y2="4.5" width="0.1" layer="21"/>
-<wire x1="-7.25" y1="-4" x2="1.25" y2="-4" width="0.1" layer="51"/>
-<wire x1="-7.25" y1="4" x2="1.25" y2="4" width="0.1" layer="21"/>
-<wire x1="1.25" y1="-4" x2="1.25" y2="4" width="0.1" layer="51"/>
-<wire x1="1.25" y1="-4.5" x2="1.25" y2="-4" width="0.1" layer="51"/>
-<wire x1="1.25" y1="4" x2="1.25" y2="4.5" width="0.1" layer="21"/>
-<wire x1="-10.75" y1="4.5" x2="1.25" y2="4.5" width="0.1" layer="21"/>
-<wire x1="-10.75" y1="-4.5" x2="1.25" y2="-4.5" width="0.1" layer="51"/>
-<wire x1="1.25" y1="-4" x2="2.75" y2="-4" width="0.1" layer="51"/>
-<wire x1="2.75" y1="-4" x2="3.25" y2="-4" width="0.1" layer="51"/>
-<wire x1="1.25" y1="4" x2="2.75" y2="4" width="0.1" layer="21"/>
-<wire x1="2.75" y1="4" x2="3.25" y2="4" width="0.1" layer="21"/>
-<wire x1="3.25" y1="-4" x2="3.25" y2="4" width="0.1" layer="51"/>
-<wire x1="2.75" y1="-4" x2="2.75" y2="4" width="0.1" layer="51"/>
-<wire x1="-10.75" y1="3.2" x2="-1.75" y2="3.2" width="0.1" layer="21" style="shortdash"/>
-<wire x1="-10.75" y1="-3.2" x2="-1.75" y2="-3.2" width="0.1" layer="21" style="shortdash"/>
-<wire x1="-1.75" y1="-3.2" x2="-1.75" y2="-1.25" width="0.1" layer="21" style="shortdash"/>
-<wire x1="-1.75" y1="-1.25" x2="-1.75" y2="1.25" width="0.1" layer="21" style="shortdash"/>
-<wire x1="-1.75" y1="1.25" x2="-1.75" y2="3.2" width="0.1" layer="21" style="shortdash"/>
-<wire x1="-8.75" y1="1.25" x2="-1.75" y2="1.25" width="0.1" layer="51" style="shortdash"/>
-<wire x1="-8.75" y1="-1.25" x2="-1.75" y2="-1.25" width="0.1" layer="51" style="shortdash"/>
-<wire x1="-8.75" y1="1.25" x2="-8.75" y2="-1.25" width="0.1" layer="21" curve="180"/>
-<wire x1="2.5" y1="1.75" x2="3.5" y2="1.75" width="0" layer="46"/>
-<wire x1="3.5" y1="1.75" x2="3.5" y2="-1.75" width="0" layer="46"/>
-<wire x1="3.5" y1="-1.75" x2="2.5" y2="-1.75" width="0" layer="46"/>
-<wire x1="2.5" y1="-1.75" x2="2.5" y2="1.75" width="0" layer="46"/>
-<wire x1="-3.4" y1="1.5" x2="-2.6" y2="1.5" width="0" layer="46"/>
-<wire x1="-2.6" y1="1.5" x2="-2.6" y2="-1.5" width="0" layer="46"/>
-<wire x1="-2.6" y1="-1.5" x2="-3.4" y2="-1.5" width="0" layer="46"/>
-<wire x1="-3.4" y1="-1.5" x2="-3.4" y2="1.5" width="0" layer="46"/>
-<wire x1="-1.5" y1="-4.4" x2="1.5" y2="-4.4" width="0" layer="46"/>
-<wire x1="1.5" y1="-4.4" x2="1.5" y2="-5.2" width="0" layer="46"/>
-<wire x1="1.5" y1="-5.2" x2="-1.5" y2="-5.2" width="0" layer="46"/>
-<wire x1="-1.5" y1="-5.2" x2="-1.5" y2="-4.4" width="0" layer="46"/>
-<wire x1="2.75" y1="2.35" x2="2.75" y2="4" width="0.1" layer="21"/>
-<wire x1="2.75" y1="-4" x2="2.75" y2="-2.35" width="0.1" layer="21"/>
-<wire x1="3.25" y1="-4" x2="3.25" y2="-2.35" width="0.1" layer="21"/>
-<wire x1="3.25" y1="2.35" x2="3.25" y2="4" width="0.1" layer="21"/>
-<wire x1="2.75" y1="-4" x2="3.25" y2="-4" width="0.1" layer="21"/>
-<wire x1="-10.75" y1="-4.5" x2="-2.56" y2="-4.5" width="0.1" layer="21"/>
-<wire x1="1.25" y1="-2.73" x2="1.25" y2="4" width="0.1" layer="21"/>
-<pad name="2" x="0" y="-4.8" drill="0.8" diameter="2.1844" shape="long"/>
-<pad name="1" x="-3" y="0" drill="0.8" diameter="2.1844" shape="long" rot="R90"/>
-<pad name="3" x="3" y="0" drill="1" diameter="2.1844" shape="long" rot="R90"/>
-<text x="-10.16" y="-6.35" size="1.27" layer="27">&gt;VALUE</text>
-<text x="-10.16" y="5.08" size="1.27" layer="25">&gt;NAME</text>
-<rectangle x1="-1.25" y1="-5.05" x2="1.25" y2="-4.55" layer="51"/>
-<rectangle x1="2.75" y1="-1.5" x2="3.25" y2="1.5" layer="51"/>
-<rectangle x1="-3.1" y1="-1.25" x2="-2.9" y2="1.25" layer="51"/>
-</package>
-<package name="SPC4077" urn="urn:adsk.eagle:footprint:7488/1" library_version="1">
-<description>&lt;b&gt;DC POWER JACK 2mm&lt;/b&gt;&lt;br&gt; Right Angle, Through Hole, Rated 5A at 16VDC, PC Terminals&lt;p&gt;
-Source: www.spctechnology.com .. 84N1161.pdf&lt;br&gt;
-Distributor: &lt;b&gt;Farnell (www.Farnell.de)&lt;/b&gt;&lt;br&gt;
-Created by Robert Siegler</description>
-<wire x1="-10.75" y1="-4.5" x2="-10.75" y2="-3.2" width="0.1" layer="21"/>
-<wire x1="-10.75" y1="-3.2" x2="-10.75" y2="3.2" width="0.1" layer="21"/>
-<wire x1="-10.75" y1="3.2" x2="-10.75" y2="4.5" width="0.1" layer="21"/>
-<wire x1="-7.25" y1="-4.5" x2="-7.25" y2="4" width="0.1" layer="21"/>
-<wire x1="-7.25" y1="4" x2="-7.25" y2="4.5" width="0.1" layer="21"/>
-<wire x1="-7.25" y1="-4" x2="1.25" y2="-4" width="0.1" layer="51"/>
-<wire x1="-7.25" y1="4" x2="1.25" y2="4" width="0.1" layer="21"/>
-<wire x1="1.25" y1="-4" x2="1.25" y2="4" width="0.1" layer="51"/>
-<wire x1="1.25" y1="-4.5" x2="1.25" y2="-4" width="0.1" layer="51"/>
-<wire x1="1.25" y1="4" x2="1.25" y2="4.5" width="0.1" layer="21"/>
-<wire x1="-10.75" y1="4.5" x2="1.25" y2="4.5" width="0.1" layer="21"/>
-<wire x1="-10.75" y1="-4.5" x2="1.25" y2="-4.5" width="0.1" layer="51"/>
-<wire x1="1.25" y1="-4" x2="2.75" y2="-4" width="0.1" layer="51"/>
-<wire x1="2.75" y1="-4" x2="3.25" y2="-4" width="0.1" layer="51"/>
-<wire x1="1.25" y1="4" x2="2.75" y2="4" width="0.1" layer="21"/>
-<wire x1="2.75" y1="4" x2="3.25" y2="4" width="0.1" layer="21"/>
-<wire x1="3.25" y1="-4" x2="3.25" y2="4" width="0.1" layer="51"/>
-<wire x1="2.75" y1="-4" x2="2.75" y2="4" width="0.1" layer="51"/>
-<wire x1="-10.75" y1="3.2" x2="-1.75" y2="3.2" width="0.1" layer="21" style="shortdash"/>
-<wire x1="-10.75" y1="-3.2" x2="-1.75" y2="-3.2" width="0.1" layer="21" style="shortdash"/>
-<wire x1="-1.75" y1="-3.2" x2="-1.75" y2="-1" width="0.1" layer="21" style="shortdash"/>
-<wire x1="-1.75" y1="-1" x2="-1.75" y2="1" width="0.1" layer="21" style="shortdash"/>
-<wire x1="-1.75" y1="1" x2="-1.75" y2="3.2" width="0.1" layer="21" style="shortdash"/>
-<wire x1="-8.75" y1="-1" x2="-1.75" y2="-1" width="0.1" layer="51" style="shortdash"/>
-<wire x1="-8.75" y1="1" x2="-1.75" y2="1" width="0.1" layer="51" style="shortdash"/>
-<wire x1="-8.75" y1="-1" x2="-8.75" y2="1" width="0.1" layer="21" curve="-180"/>
-<wire x1="2.5" y1="1.75" x2="3.5" y2="1.75" width="0" layer="46"/>
-<wire x1="3.5" y1="1.75" x2="3.5" y2="-1.75" width="0" layer="46"/>
-<wire x1="3.5" y1="-1.75" x2="2.5" y2="-1.75" width="0" layer="46"/>
-<wire x1="2.5" y1="-1.75" x2="2.5" y2="1.75" width="0" layer="46"/>
-<wire x1="-3.4" y1="1.5" x2="-2.6" y2="1.5" width="0" layer="46"/>
-<wire x1="-2.6" y1="1.5" x2="-2.6" y2="-1.5" width="0" layer="46"/>
-<wire x1="-2.6" y1="-1.5" x2="-3.4" y2="-1.5" width="0" layer="46"/>
-<wire x1="-3.4" y1="-1.5" x2="-3.4" y2="1.5" width="0" layer="46"/>
-<wire x1="-1.5" y1="-4.4" x2="1.5" y2="-4.4" width="0" layer="46"/>
-<wire x1="1.5" y1="-4.4" x2="1.5" y2="-5.2" width="0" layer="46"/>
-<wire x1="1.5" y1="-5.2" x2="-1.5" y2="-5.2" width="0" layer="46"/>
-<wire x1="-1.5" y1="-5.2" x2="-1.5" y2="-4.4" width="0" layer="46"/>
-<wire x1="-10.75" y1="-4.5" x2="-2.56" y2="-4.5" width="0.1" layer="21"/>
-<wire x1="2.75" y1="-4" x2="3.25" y2="-4" width="0.1" layer="21"/>
-<wire x1="3.25" y1="-4" x2="3.25" y2="-2.35" width="0.1" layer="21"/>
-<wire x1="3.25" y1="2.35" x2="3.25" y2="4" width="0.1" layer="21"/>
-<wire x1="1.25" y1="-2.73" x2="1.25" y2="4" width="0.1" layer="21"/>
-<wire x1="2.75" y1="2.35" x2="2.75" y2="4" width="0.1" layer="21"/>
-<wire x1="2.75" y1="-4" x2="2.75" y2="-2.35" width="0.1" layer="21"/>
-<pad name="2" x="0" y="-4.8" drill="0.8" diameter="2.1844" shape="long"/>
-<pad name="1" x="-3" y="0" drill="0.8" diameter="2.1844" shape="long" rot="R90"/>
-<pad name="3" x="3" y="0" drill="1" diameter="2.1844" shape="long" rot="R90"/>
-<text x="-10.16" y="5.08" size="1.27" layer="25">&gt;NAME</text>
-<text x="-10.16" y="-6.35" size="1.27" layer="27">&gt;VALUE</text>
-<rectangle x1="-1.25" y1="-5.05" x2="1.25" y2="-4.55" layer="51"/>
-<rectangle x1="2.75" y1="-1.5" x2="3.25" y2="1.5" layer="51"/>
-<rectangle x1="-3.1" y1="-1.25" x2="-2.9" y2="1.25" layer="51"/>
-</package>
-</packages>
-<packages3d>
-<package3d name="SPC4078" urn="urn:adsk.eagle:package:7494/1" type="box" library_version="1">
-<description>DC POWER JACK 2.5mm Right Angle, Through Hole, Rated 5A at 16VDC, PC Terminals
-Source: www.spctechnology.com .. 84N1162.pdf
-Distributor: Farnell (www.Farnell.de)
-Created by Robert Siegler</description>
-<packageinstances>
-<packageinstance name="SPC4078"/>
-</packageinstances>
-</package3d>
-<package3d name="SPC4077" urn="urn:adsk.eagle:package:7492/1" type="box" library_version="1">
-<description>DC POWER JACK 2mm Right Angle, Through Hole, Rated 5A at 16VDC, PC Terminals
-Source: www.spctechnology.com .. 84N1161.pdf
-Distributor: Farnell (www.Farnell.de)
-Created by Robert Siegler</description>
-<packageinstances>
-<packageinstance name="SPC4077"/>
-</packageinstances>
-</package3d>
-</packages3d>
-<symbols>
-<symbol name="JACK-PLUG" urn="urn:adsk.eagle:symbol:7487/1" library_version="1">
-<wire x1="-5.715" y1="1.27" x2="-5.715" y2="3.81" width="0.1524" layer="94" curve="-180"/>
-<wire x1="-5.715" y1="3.81" x2="-1.27" y2="3.81" width="0.1524" layer="94"/>
-<wire x1="-1.27" y1="3.81" x2="-1.27" y2="1.27" width="0.1524" layer="94"/>
-<wire x1="-1.27" y1="1.27" x2="-5.715" y2="1.27" width="0.1524" layer="94"/>
-<wire x1="-1.27" y1="1.27" x2="-1.27" y2="0.635" width="0.1524" layer="94"/>
-<wire x1="-1.27" y1="0.635" x2="0" y2="0.635" width="0.1524" layer="94"/>
-<wire x1="0" y1="0.635" x2="0" y2="4.445" width="0.1524" layer="94"/>
-<wire x1="0" y1="4.445" x2="-1.27" y2="4.445" width="0.1524" layer="94"/>
-<wire x1="-1.27" y1="4.445" x2="-1.27" y2="3.81" width="0.1524" layer="94"/>
-<wire x1="0" y1="-2.54" x2="-5.715" y2="-2.54" width="0.1524" layer="94"/>
-<wire x1="-5.715" y1="-2.54" x2="-6.35" y2="-1.27" width="0.1524" layer="94"/>
-<wire x1="-6.35" y1="-1.27" x2="-6.985" y2="-2.54" width="0.1524" layer="94"/>
-<wire x1="0" y1="0" x2="0" y2="-2.54" width="0.1524" layer="94"/>
-<text x="-7.62" y="5.08" size="1.778" layer="95">&gt;NAME</text>
-<text x="-7.62" y="-5.08" size="1.778" layer="96">&gt;VALUE</text>
-<pin name="3" x="5.08" y="2.54" visible="pad" length="middle" direction="pas" rot="R180"/>
-<pin name="2" x="5.08" y="0" visible="pad" length="middle" direction="pas" rot="R180"/>
-<pin name="1" x="5.08" y="-2.54" visible="pad" length="middle" direction="pas" rot="R180"/>
-<polygon width="0.1524" layer="94">
-<vertex x="0" y="-2.54"/>
-<vertex x="-0.508" y="-1.27"/>
-<vertex x="0.508" y="-1.27"/>
-</polygon>
-</symbol>
-</symbols>
-<devicesets>
-<deviceset name="JACK-PLUG" urn="urn:adsk.eagle:component:7496/1" prefix="J" uservalue="yes" library_version="1">
-<description>&lt;b&gt;DC POWER JACK&lt;/b&gt;&lt;br&gt;
-Power Jack, DC, Right Angle, Through Hole, Rated 5A at 16VDC, PC Terminals&lt;p&gt;
-Distributor: &lt;b&gt;Farnell (www.Farnell.de)&lt;/b&gt;&lt;br&gt;
-Drawing: &lt;b&gt;84N1161.pdf / 84N1162.pdf&lt;/b&gt;&lt;br&gt;
-Manufacturer: &lt;b&gt;SPC Technology (www.spctechnology.com)&lt;/b&gt;&lt;br&gt;
-Type: &lt;b&gt;SPC4077 / SPC 4078&lt;/b&gt;&lt;p&gt;</description>
-<gates>
-<gate name="G$1" symbol="JACK-PLUG" x="0" y="0"/>
-</gates>
-<devices>
-<device name="1" package="SPC4078">
-<connects>
-<connect gate="G$1" pin="1" pad="1"/>
-<connect gate="G$1" pin="2" pad="2"/>
-<connect gate="G$1" pin="3" pad="3"/>
-</connects>
-<package3dinstances>
-<package3dinstance package3d_urn="urn:adsk.eagle:package:7494/1"/>
-</package3dinstances>
-<technologies>
-<technology name="">
-<attribute name="MF" value="" constant="no"/>
-<attribute name="MPN" value="" constant="no"/>
-<attribute name="OC_FARNELL" value="unknown" constant="no"/>
-<attribute name="OC_NEWARK" value="unknown" constant="no"/>
-</technology>
-</technologies>
-</device>
-<device name="0" package="SPC4077">
-<connects>
-<connect gate="G$1" pin="1" pad="1"/>
-<connect gate="G$1" pin="2" pad="2"/>
-<connect gate="G$1" pin="3" pad="3"/>
-</connects>
-<package3dinstances>
-<package3dinstance package3d_urn="urn:adsk.eagle:package:7492/1"/>
-</package3dinstances>
-<technologies>
-<technology name="">
-<attribute name="MF" value="" constant="no"/>
-<attribute name="MPN" value="" constant="no"/>
-<attribute name="OC_FARNELL" value="unknown" constant="no"/>
-<attribute name="OC_NEWARK" value="unknown" constant="no"/>
-</technology>
-</technologies>
-</device>
-</devices>
-</deviceset>
-</devicesets>
-</library>
 <library name="diode" urn="urn:adsk.eagle:library:210">
 <description>&lt;b&gt;Diodes&lt;/b&gt;&lt;p&gt;
 Based on the following sources:
@@ -6041,6 +5816,114 @@ Diameter: 16mm</description>
 </deviceset>
 </devicesets>
 </library>
+<library name="TCT40">
+<packages>
+<package name="TCT40-16">
+<pad name="P1" x="5" y="0" drill="1" diameter="3"/>
+<pad name="P0" x="-5" y="0" drill="1" diameter="3"/>
+<circle x="0" y="0" radius="8" width="0.4064" layer="51"/>
+<text x="-3" y="2" size="1.27" layer="25">&gt;NAME</text>
+<text x="-3" y="-4" size="1.27" layer="27">&gt;VALUE</text>
+</package>
+</packages>
+<symbols>
+<symbol name="TCT40-16">
+<pin name="P0" x="5.08" y="2.54" length="short" rot="R180"/>
+<pin name="P1" x="5.08" y="0" length="short" rot="R180"/>
+<wire x1="1.27" y1="-1.27" x2="1.27" y2="3.81" width="0.254" layer="94"/>
+<wire x1="1.27" y1="3.81" x2="2.54" y2="3.81" width="0.254" layer="94"/>
+<wire x1="2.54" y1="3.81" x2="2.54" y2="-1.27" width="0.254" layer="94"/>
+<wire x1="2.54" y1="-1.27" x2="1.27" y2="-1.27" width="0.254" layer="94"/>
+<wire x1="1.27" y1="3.81" x2="-2.54" y2="7.62" width="0.254" layer="94"/>
+<wire x1="-2.54" y1="7.62" x2="-2.54" y2="-5.08" width="0.254" layer="94"/>
+<wire x1="-2.54" y1="-5.08" x2="1.27" y2="-1.27" width="0.254" layer="94"/>
+<text x="1.27" y="-2.54" size="1.27" layer="95">&gt;NAME</text>
+<text x="1.27" y="-5.08" size="1.27" layer="96">&gt;VALUE</text>
+</symbol>
+</symbols>
+<devicesets>
+<deviceset name="TCT40-16" uservalue="yes">
+<description>TCT40-16 T/R Ultrasonic transducer.
+40kHz.
+Diameter: 16mm</description>
+<gates>
+<gate name="G$1" symbol="TCT40-16" x="0" y="0"/>
+</gates>
+<devices>
+<device name="" package="TCT40-16">
+<connects>
+<connect gate="G$1" pin="P0" pad="P0"/>
+<connect gate="G$1" pin="P1" pad="P1"/>
+</connects>
+<technologies>
+<technology name=""/>
+</technologies>
+</device>
+</devices>
+</deviceset>
+</devicesets>
+</library>
+<library name="DCJack">
+<packages>
+<package name="DCJACK">
+<wire x1="-4.5" y1="-3" x2="4.5" y2="-3" width="0.1524" layer="21"/>
+<wire x1="-4.5" y1="-3" x2="-4.5" y2="11" width="0.1524" layer="21"/>
+<wire x1="4.5" y1="-3" x2="4.5" y2="11" width="0.1524" layer="21"/>
+<wire x1="-4.5" y1="11" x2="-3" y2="11" width="0.1524" layer="21"/>
+<wire x1="-3" y1="11" x2="3" y2="11" width="0.1524" layer="21"/>
+<wire x1="3" y1="11" x2="4.5" y2="11" width="0.1524" layer="21"/>
+<wire x1="-3" y1="11" x2="-2.9" y2="0.1" width="0.1524" layer="21" style="shortdash"/>
+<wire x1="-2.9" y1="0.1" x2="-0.9" y2="0.1" width="0.1524" layer="21" style="shortdash"/>
+<wire x1="-0.9" y1="0.1" x2="1.1" y2="0.1" width="0.1524" layer="21" style="shortdash"/>
+<wire x1="1.1" y1="0.1" x2="3.1" y2="0.1" width="0.1524" layer="21" style="shortdash"/>
+<wire x1="3.1" y1="0.1" x2="3" y2="11" width="0.1524" layer="21" style="shortdash"/>
+<wire x1="1.1" y1="0.1" x2="1" y2="8.5" width="0.1524" layer="21" style="shortdash"/>
+<wire x1="-0.9" y1="0.1" x2="-1" y2="8.5" width="0.1524" layer="21" style="shortdash"/>
+<wire x1="-1" y1="8.5" x2="1" y2="8.5" width="0.1524" layer="21" curve="-180"/>
+<text x="-4.7" y="2.6" size="1.778" layer="25" rot="R90">&gt;NAME</text>
+<pad name="1" x="0" y="-3" drill="1" diameter="4.5" shape="octagon"/>
+<pad name="2" x="0" y="3" drill="1" diameter="4.5" shape="octagon"/>
+<pad name="3" x="-5" y="0" drill="1" diameter="4.5" shape="octagon" rot="R90"/>
+</package>
+</packages>
+<symbols>
+<symbol name="DCJACK">
+<pin name="GND" x="-1.27" y="0" length="short" direction="pwr" rot="R90"/>
+<pin name="PWR" x="1.27" y="0" length="short" direction="pwr" rot="R90"/>
+<wire x1="0.254" y1="2.54" x2="2.286" y2="2.54" width="0.1524" layer="94"/>
+<wire x1="2.286" y1="2.54" x2="2.286" y2="3.302" width="0.1524" layer="94"/>
+<wire x1="2.286" y1="3.302" x2="2.032" y2="3.302" width="0.1524" layer="94"/>
+<wire x1="2.032" y1="3.302" x2="0.508" y2="3.302" width="0.1524" layer="94"/>
+<wire x1="0.508" y1="3.302" x2="0.254" y2="3.302" width="0.1524" layer="94"/>
+<wire x1="0.254" y1="3.302" x2="0.254" y2="2.54" width="0.1524" layer="94"/>
+<wire x1="0.508" y1="3.302" x2="0.508" y2="5.334" width="0.1524" layer="94"/>
+<wire x1="2.032" y1="3.302" x2="2.032" y2="5.334" width="0.1524" layer="94"/>
+<wire x1="0.508" y1="5.334" x2="2.032" y2="5.334" width="0.1524" layer="94" curve="-180"/>
+<wire x1="-1.27" y1="2.54" x2="-1.27" y2="4.826" width="0.1524" layer="94"/>
+<wire x1="-1.27" y1="4.826" x2="-0.508" y2="5.588" width="0.1524" layer="94"/>
+<wire x1="-0.508" y1="5.588" x2="-1.27" y2="6.096" width="0.1524" layer="94"/>
+<text x="4.318" y="2.794" size="1.778" layer="95" rot="R90">&gt;NAME</text>
+</symbol>
+</symbols>
+<devicesets>
+<deviceset name="DCJACK">
+<gates>
+<gate name="J$1" symbol="DCJACK" x="0" y="-2.54"/>
+</gates>
+<devices>
+<device name="" package="DCJACK">
+<connects>
+<connect gate="J$1" pin="GND" pad="2 3"/>
+<connect gate="J$1" pin="PWR" pad="1"/>
+</connects>
+<technologies>
+<technology name=""/>
+</technologies>
+</device>
+</devices>
+</deviceset>
+</devicesets>
+</library>
 </libraries>
 <attributes>
 </attributes>
@@ -6050,7 +5933,7 @@ Diameter: 16mm</description>
 <class number="0" name="default" width="0.508" drill="0.254">
 <clearance class="0" value="0.205"/>
 </class>
-<class number="1" name="+18V" width="1.27" drill="0">
+<class number="1" name="+18V" width="0.762" drill="0">
 </class>
 <class number="2" name="+5V" width="1.27" drill="0">
 </class>
@@ -6064,7 +5947,6 @@ Diameter: 16mm</description>
 </class>
 </classes>
 <parts>
-<part name="PWR_IN" library="con-jack" library_urn="urn:adsk.eagle:library:154" deviceset="JACK-PLUG" device="0" package3d_urn="urn:adsk.eagle:package:7492/1"/>
 <part name="D1" library="diode" library_urn="urn:adsk.eagle:library:210" deviceset="1N4004" device="" package3d_urn="urn:adsk.eagle:package:43336/1" value="1N4001"/>
 <part name="IC1" library="linear" library_urn="urn:adsk.eagle:library:262" deviceset="78*" device="L" package3d_urn="urn:adsk.eagle:package:16416/2" technology="12"/>
 <part name="SVI1" library="con-lstb" library_urn="urn:adsk.eagle:library:162" deviceset="MA08-1" device="" package3d_urn="urn:adsk.eagle:package:8343/1"/>
@@ -6095,23 +5977,23 @@ Diameter: 16mm</description>
 <part name="U1" library="TC4427EOA" deviceset="TC4427EOA" device=""/>
 <part name="V4" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+18V" device="" value="V20"/>
 <part name="GND9" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="U$3" library="ultrasonic" deviceset="TCT40-16" device=""/>
-<part name="U$4" library="ultrasonic" deviceset="TCT40-16" device=""/>
+<part name="U$3" library="TCT40" deviceset="TCT40-16" device=""/>
+<part name="U$4" library="TCT40" deviceset="TCT40-16" device=""/>
 <part name="U2" library="TC4427EOA" deviceset="TC4427EOA" device=""/>
 <part name="V6" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+18V" device="" value="V20"/>
 <part name="GND10" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="U$5" library="ultrasonic" deviceset="TCT40-16" device=""/>
-<part name="U$6" library="ultrasonic" deviceset="TCT40-16" device=""/>
+<part name="U$5" library="TCT40" deviceset="TCT40-16" device=""/>
+<part name="U$6" library="TCT40" deviceset="TCT40-16" device=""/>
 <part name="U3" library="TC4427EOA" deviceset="TC4427EOA" device=""/>
 <part name="V7" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+18V" device="" value="V20"/>
 <part name="GND11" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="U$7" library="ultrasonic" deviceset="TCT40-16" device=""/>
+<part name="U$7" library="TCT40" deviceset="TCT40-16" device=""/>
 <part name="U$8" library="ultrasonic" deviceset="TCT40-16" device=""/>
 <part name="U4" library="TC4427EOA" deviceset="TC4427EOA" device=""/>
 <part name="V8" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+18V" device="" value="V20"/>
 <part name="GND12" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="U$9" library="ultrasonic" deviceset="TCT40-16" device=""/>
-<part name="U$10" library="ultrasonic" deviceset="TCT40-16" device=""/>
+<part name="U$9" library="TCT40" deviceset="TCT40-16" device=""/>
+<part name="U$10" library="TCT40" deviceset="TCT40-16" device=""/>
 <part name="C1" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="C-EU" device="C1206" package3d_urn="urn:adsk.eagle:package:23618/2" value="2.2uF"/>
 <part name="C2" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="C-EU" device="C1206" package3d_urn="urn:adsk.eagle:package:23618/2" value="2.2uF"/>
 <part name="C3" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="C-EU" device="C1206" package3d_urn="urn:adsk.eagle:package:23618/2" value="2.2uF"/>
@@ -6119,23 +6001,23 @@ Diameter: 16mm</description>
 <part name="U5" library="TC4427EOA" deviceset="TC4427EOA" device=""/>
 <part name="V3" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+18V" device="" value="V20"/>
 <part name="GND8" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="U$1" library="ultrasonic" deviceset="TCT40-16" device=""/>
-<part name="U$2" library="ultrasonic" deviceset="TCT40-16" device=""/>
+<part name="U$1" library="TCT40" deviceset="TCT40-16" device=""/>
+<part name="U$2" library="TCT40" deviceset="TCT40-16" device=""/>
 <part name="U6" library="TC4427EOA" deviceset="TC4427EOA" device=""/>
 <part name="V9" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+18V" device="" value="V20"/>
 <part name="GND13" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="U$11" library="ultrasonic" deviceset="TCT40-16" device=""/>
-<part name="U$12" library="ultrasonic" deviceset="TCT40-16" device=""/>
+<part name="U$11" library="TCT40" deviceset="TCT40-16" device=""/>
+<part name="U$12" library="TCT40" deviceset="TCT40-16" device=""/>
 <part name="U7" library="TC4427EOA" deviceset="TC4427EOA" device=""/>
 <part name="V10" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+18V" device="" value="V20"/>
 <part name="GND14" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="U$13" library="ultrasonic" deviceset="TCT40-16" device=""/>
-<part name="U$14" library="ultrasonic" deviceset="TCT40-16" device=""/>
+<part name="U$13" library="TCT40" deviceset="TCT40-16" device=""/>
+<part name="U$14" library="TCT40" deviceset="TCT40-16" device=""/>
 <part name="U8" library="TC4427EOA" deviceset="TC4427EOA" device=""/>
 <part name="V11" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+18V" device="" value="V20"/>
 <part name="GND15" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="U$15" library="ultrasonic" deviceset="TCT40-16" device=""/>
-<part name="U$16" library="ultrasonic" deviceset="TCT40-16" device=""/>
+<part name="U$15" library="TCT40" deviceset="TCT40-16" device=""/>
+<part name="U$16" library="TCT40" deviceset="TCT40-16" device=""/>
 <part name="C5" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="C-EU" device="C1206" package3d_urn="urn:adsk.eagle:package:23618/2" value="2.2uF"/>
 <part name="C6" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="C-EU" device="C1206" package3d_urn="urn:adsk.eagle:package:23618/2" value="2.2uF"/>
 <part name="C7" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="C-EU" device="C1206" package3d_urn="urn:adsk.eagle:package:23618/2" value="2.2uF"/>
@@ -6143,23 +6025,23 @@ Diameter: 16mm</description>
 <part name="U9" library="TC4427EOA" deviceset="TC4427EOA" device=""/>
 <part name="V12" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+18V" device="" value="V20"/>
 <part name="GND16" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="U$17" library="ultrasonic" deviceset="TCT40-16" device=""/>
-<part name="U$18" library="ultrasonic" deviceset="TCT40-16" device=""/>
+<part name="U$17" library="TCT40" deviceset="TCT40-16" device=""/>
+<part name="U$18" library="TCT40" deviceset="TCT40-16" device=""/>
 <part name="U10" library="TC4427EOA" deviceset="TC4427EOA" device=""/>
 <part name="V13" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+18V" device="" value="V20"/>
 <part name="GND17" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="U$19" library="ultrasonic" deviceset="TCT40-16" device=""/>
-<part name="U$20" library="ultrasonic" deviceset="TCT40-16" device=""/>
+<part name="U$19" library="TCT40" deviceset="TCT40-16" device=""/>
+<part name="U$20" library="TCT40" deviceset="TCT40-16" device=""/>
 <part name="U11" library="TC4427EOA" deviceset="TC4427EOA" device=""/>
 <part name="V14" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+18V" device="" value="V20"/>
 <part name="GND18" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="U$21" library="ultrasonic" deviceset="TCT40-16" device=""/>
-<part name="U$22" library="ultrasonic" deviceset="TCT40-16" device=""/>
+<part name="U$21" library="TCT40" deviceset="TCT40-16" device=""/>
+<part name="U$22" library="TCT40" deviceset="TCT40-16" device=""/>
 <part name="U12" library="TC4427EOA" deviceset="TC4427EOA" device=""/>
 <part name="V15" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+18V" device="" value="V20"/>
 <part name="GND19" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="U$23" library="ultrasonic" deviceset="TCT40-16" device=""/>
-<part name="U$24" library="ultrasonic" deviceset="TCT40-16" device=""/>
+<part name="U$23" library="TCT40" deviceset="TCT40-16" device=""/>
+<part name="U$24" library="TCT40" deviceset="TCT40-16" device=""/>
 <part name="C9" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="C-EU" device="C1206" package3d_urn="urn:adsk.eagle:package:23618/2" value="2.2uF"/>
 <part name="C10" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="C-EU" device="C1206" package3d_urn="urn:adsk.eagle:package:23618/2" value="2.2uF"/>
 <part name="C11" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="C-EU" device="C1206" package3d_urn="urn:adsk.eagle:package:23618/2" value="2.2uF"/>
@@ -6167,23 +6049,23 @@ Diameter: 16mm</description>
 <part name="U13" library="TC4427EOA" deviceset="TC4427EOA" device=""/>
 <part name="V16" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+18V" device="" value="V20"/>
 <part name="GND20" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="U$25" library="ultrasonic" deviceset="TCT40-16" device=""/>
-<part name="U$26" library="ultrasonic" deviceset="TCT40-16" device=""/>
+<part name="U$25" library="TCT40" deviceset="TCT40-16" device=""/>
+<part name="U$26" library="TCT40" deviceset="TCT40-16" device=""/>
 <part name="U14" library="TC4427EOA" deviceset="TC4427EOA" device=""/>
 <part name="V17" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+18V" device="" value="V20"/>
 <part name="GND21" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="U$27" library="ultrasonic" deviceset="TCT40-16" device=""/>
-<part name="U$28" library="ultrasonic" deviceset="TCT40-16" device=""/>
+<part name="U$27" library="TCT40" deviceset="TCT40-16" device=""/>
+<part name="U$28" library="TCT40" deviceset="TCT40-16" device=""/>
 <part name="U15" library="TC4427EOA" deviceset="TC4427EOA" device=""/>
 <part name="V18" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+18V" device="" value="V20"/>
 <part name="GND22" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="U$29" library="ultrasonic" deviceset="TCT40-16" device=""/>
-<part name="U$30" library="ultrasonic" deviceset="TCT40-16" device=""/>
+<part name="U$29" library="TCT40" deviceset="TCT40-16" device=""/>
+<part name="U$30" library="TCT40" deviceset="TCT40-16" device=""/>
 <part name="U16" library="TC4427EOA" deviceset="TC4427EOA" device=""/>
 <part name="V19" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+18V" device="" value="V20"/>
 <part name="GND23" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="U$31" library="ultrasonic" deviceset="TCT40-16" device=""/>
-<part name="U$32" library="ultrasonic" deviceset="TCT40-16" device=""/>
+<part name="U$31" library="TCT40" deviceset="TCT40-16" device=""/>
+<part name="U$32" library="TCT40" deviceset="TCT40-16" device=""/>
 <part name="C13" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="C-EU" device="C1206" package3d_urn="urn:adsk.eagle:package:23618/2" value="2.2uF"/>
 <part name="C14" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="C-EU" device="C1206" package3d_urn="urn:adsk.eagle:package:23618/2" value="2.2uF"/>
 <part name="C15" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="C-EU" device="C1206" package3d_urn="urn:adsk.eagle:package:23618/2" value="2.2uF"/>
@@ -6191,23 +6073,23 @@ Diameter: 16mm</description>
 <part name="U17" library="TC4427EOA" deviceset="TC4427EOA" device=""/>
 <part name="V20" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+18V" device="" value="V20"/>
 <part name="GND24" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="U$33" library="ultrasonic" deviceset="TCT40-16" device=""/>
-<part name="U$34" library="ultrasonic" deviceset="TCT40-16" device=""/>
+<part name="U$33" library="TCT40" deviceset="TCT40-16" device=""/>
+<part name="U$34" library="TCT40" deviceset="TCT40-16" device=""/>
 <part name="U18" library="TC4427EOA" deviceset="TC4427EOA" device=""/>
 <part name="V21" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+18V" device="" value="V20"/>
 <part name="GND25" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="U$35" library="ultrasonic" deviceset="TCT40-16" device=""/>
-<part name="U$36" library="ultrasonic" deviceset="TCT40-16" device=""/>
+<part name="U$35" library="TCT40" deviceset="TCT40-16" device=""/>
+<part name="U$36" library="TCT40" deviceset="TCT40-16" device=""/>
 <part name="U19" library="TC4427EOA" deviceset="TC4427EOA" device=""/>
 <part name="V22" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+18V" device="" value="V20"/>
 <part name="GND26" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="U$37" library="ultrasonic" deviceset="TCT40-16" device=""/>
-<part name="U$38" library="ultrasonic" deviceset="TCT40-16" device=""/>
+<part name="U$37" library="TCT40" deviceset="TCT40-16" device=""/>
+<part name="U$38" library="TCT40" deviceset="TCT40-16" device=""/>
 <part name="U20" library="TC4427EOA" deviceset="TC4427EOA" device=""/>
 <part name="V23" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+18V" device="" value="V20"/>
 <part name="GND27" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="U$39" library="ultrasonic" deviceset="TCT40-16" device=""/>
-<part name="U$40" library="ultrasonic" deviceset="TCT40-16" device=""/>
+<part name="U$39" library="TCT40" deviceset="TCT40-16" device=""/>
+<part name="U$40" library="TCT40" deviceset="TCT40-16" device=""/>
 <part name="C17" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="C-EU" device="C1206" package3d_urn="urn:adsk.eagle:package:23618/2" value="2.2uF"/>
 <part name="C18" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="C-EU" device="C1206" package3d_urn="urn:adsk.eagle:package:23618/2" value="2.2uF"/>
 <part name="C19" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="C-EU" device="C1206" package3d_urn="urn:adsk.eagle:package:23618/2" value="2.2uF"/>
@@ -6215,23 +6097,23 @@ Diameter: 16mm</description>
 <part name="U21" library="TC4427EOA" deviceset="TC4427EOA" device=""/>
 <part name="V24" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+18V" device="" value="V20"/>
 <part name="GND28" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="U$41" library="ultrasonic" deviceset="TCT40-16" device=""/>
-<part name="U$42" library="ultrasonic" deviceset="TCT40-16" device=""/>
+<part name="U$41" library="TCT40" deviceset="TCT40-16" device=""/>
+<part name="U$42" library="TCT40" deviceset="TCT40-16" device=""/>
 <part name="U22" library="TC4427EOA" deviceset="TC4427EOA" device=""/>
 <part name="V25" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+18V" device="" value="V20"/>
 <part name="GND29" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="U$43" library="ultrasonic" deviceset="TCT40-16" device=""/>
-<part name="U$44" library="ultrasonic" deviceset="TCT40-16" device=""/>
+<part name="U$43" library="TCT40" deviceset="TCT40-16" device=""/>
+<part name="U$44" library="TCT40" deviceset="TCT40-16" device=""/>
 <part name="U23" library="TC4427EOA" deviceset="TC4427EOA" device=""/>
 <part name="V26" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+18V" device="" value="V20"/>
 <part name="GND30" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="U$45" library="ultrasonic" deviceset="TCT40-16" device=""/>
-<part name="U$46" library="ultrasonic" deviceset="TCT40-16" device=""/>
+<part name="U$45" library="TCT40" deviceset="TCT40-16" device=""/>
+<part name="U$46" library="TCT40" deviceset="TCT40-16" device=""/>
 <part name="U24" library="TC4427EOA" deviceset="TC4427EOA" device=""/>
 <part name="V27" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+18V" device="" value="V20"/>
 <part name="GND31" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="U$47" library="ultrasonic" deviceset="TCT40-16" device=""/>
-<part name="U$48" library="ultrasonic" deviceset="TCT40-16" device=""/>
+<part name="U$47" library="TCT40" deviceset="TCT40-16" device=""/>
+<part name="U$48" library="TCT40" deviceset="TCT40-16" device=""/>
 <part name="C21" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="C-EU" device="C1206" package3d_urn="urn:adsk.eagle:package:23618/2" value="2.2uF"/>
 <part name="C22" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="C-EU" device="C1206" package3d_urn="urn:adsk.eagle:package:23618/2" value="2.2uF"/>
 <part name="C23" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="C-EU" device="C1206" package3d_urn="urn:adsk.eagle:package:23618/2" value="2.2uF"/>
@@ -6239,23 +6121,23 @@ Diameter: 16mm</description>
 <part name="U25" library="TC4427EOA" deviceset="TC4427EOA" device=""/>
 <part name="V28" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+18V" device="" value="V20"/>
 <part name="GND32" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="U$49" library="ultrasonic" deviceset="TCT40-16" device=""/>
-<part name="U$50" library="ultrasonic" deviceset="TCT40-16" device=""/>
+<part name="U$49" library="TCT40" deviceset="TCT40-16" device=""/>
+<part name="U$50" library="TCT40" deviceset="TCT40-16" device=""/>
 <part name="U26" library="TC4427EOA" deviceset="TC4427EOA" device=""/>
 <part name="V29" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+18V" device="" value="V20"/>
 <part name="GND33" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="U$51" library="ultrasonic" deviceset="TCT40-16" device=""/>
-<part name="U$52" library="ultrasonic" deviceset="TCT40-16" device=""/>
+<part name="U$51" library="TCT40" deviceset="TCT40-16" device=""/>
+<part name="U$52" library="TCT40" deviceset="TCT40-16" device=""/>
 <part name="U27" library="TC4427EOA" deviceset="TC4427EOA" device=""/>
 <part name="V30" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+18V" device="" value="V20"/>
 <part name="GND34" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="U$53" library="ultrasonic" deviceset="TCT40-16" device=""/>
-<part name="U$54" library="ultrasonic" deviceset="TCT40-16" device=""/>
+<part name="U$53" library="TCT40" deviceset="TCT40-16" device=""/>
+<part name="U$54" library="TCT40" deviceset="TCT40-16" device=""/>
 <part name="U28" library="TC4427EOA" deviceset="TC4427EOA" device=""/>
 <part name="V31" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+18V" device="" value="V20"/>
 <part name="GND35" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="U$55" library="ultrasonic" deviceset="TCT40-16" device=""/>
-<part name="U$56" library="ultrasonic" deviceset="TCT40-16" device=""/>
+<part name="U$55" library="TCT40" deviceset="TCT40-16" device=""/>
+<part name="U$56" library="TCT40" deviceset="TCT40-16" device=""/>
 <part name="C25" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="C-EU" device="C1206" package3d_urn="urn:adsk.eagle:package:23618/2" value="2.2uF"/>
 <part name="C26" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="C-EU" device="C1206" package3d_urn="urn:adsk.eagle:package:23618/2" value="2.2uF"/>
 <part name="C27" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="C-EU" device="C1206" package3d_urn="urn:adsk.eagle:package:23618/2" value="2.2uF"/>
@@ -6263,23 +6145,23 @@ Diameter: 16mm</description>
 <part name="U29" library="TC4427EOA" deviceset="TC4427EOA" device=""/>
 <part name="V32" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+18V" device="" value="V20"/>
 <part name="GND36" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="U$57" library="ultrasonic" deviceset="TCT40-16" device=""/>
-<part name="U$58" library="ultrasonic" deviceset="TCT40-16" device=""/>
+<part name="U$57" library="TCT40" deviceset="TCT40-16" device=""/>
+<part name="U$58" library="TCT40" deviceset="TCT40-16" device=""/>
 <part name="U30" library="TC4427EOA" deviceset="TC4427EOA" device=""/>
 <part name="V33" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+18V" device="" value="V20"/>
 <part name="GND37" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="U$59" library="ultrasonic" deviceset="TCT40-16" device=""/>
-<part name="U$60" library="ultrasonic" deviceset="TCT40-16" device=""/>
+<part name="U$59" library="TCT40" deviceset="TCT40-16" device=""/>
+<part name="U$60" library="TCT40" deviceset="TCT40-16" device=""/>
 <part name="U31" library="TC4427EOA" deviceset="TC4427EOA" device=""/>
 <part name="V34" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+18V" device="" value="V20"/>
 <part name="GND38" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="U$61" library="ultrasonic" deviceset="TCT40-16" device=""/>
-<part name="U$62" library="ultrasonic" deviceset="TCT40-16" device=""/>
+<part name="U$61" library="TCT40" deviceset="TCT40-16" device=""/>
+<part name="U$62" library="TCT40" deviceset="TCT40-16" device=""/>
 <part name="U32" library="TC4427EOA" deviceset="TC4427EOA" device=""/>
 <part name="V35" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+18V" device="" value="V20"/>
 <part name="GND39" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="U$63" library="ultrasonic" deviceset="TCT40-16" device=""/>
-<part name="U$64" library="ultrasonic" deviceset="TCT40-16" device=""/>
+<part name="U$63" library="TCT40" deviceset="TCT40-16" device=""/>
+<part name="U$64" library="TCT40" deviceset="TCT40-16" device=""/>
 <part name="C29" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="C-EU" device="C1206" package3d_urn="urn:adsk.eagle:package:23618/2" value="2.2uF"/>
 <part name="C30" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="C-EU" device="C1206" package3d_urn="urn:adsk.eagle:package:23618/2" value="2.2uF"/>
 <part name="C31" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="C-EU" device="C1206" package3d_urn="urn:adsk.eagle:package:23618/2" value="2.2uF"/>
@@ -6384,16 +6266,13 @@ Diameter: 16mm</description>
 <part name="C66" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="C-EU" device="050-025X075" package3d_urn="urn:adsk.eagle:package:23637/1" value="100pF"/>
 <part name="RESET" library="switch-omron" library_urn="urn:adsk.eagle:library:377" deviceset="10-XX" device="" package3d_urn="urn:adsk.eagle:package:27496/1"/>
 <part name="GND72" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
+<part name="PWR_IN" library="DCJack" deviceset="DCJACK" device=""/>
 </parts>
 <sheets>
 <sheet>
 <plain>
 </plain>
 <instances>
-<instance part="PWR_IN" gate="G$1" x="15.24" y="129.54" smashed="yes" rot="R270">
-<attribute name="NAME" x="20.32" y="137.16" size="1.778" layer="95" rot="R270"/>
-<attribute name="VALUE" x="10.16" y="137.16" size="1.778" layer="96" rot="R270"/>
-</instance>
 <instance part="D1" gate="1" x="27.94" y="119.38" smashed="yes">
 <attribute name="NAME" x="30.48" y="119.8626" size="1.778" layer="95"/>
 <attribute name="VALUE" x="30.48" y="117.0686" size="1.778" layer="96"/>
@@ -7530,6 +7409,9 @@ Diameter: 16mm</description>
 <instance part="GND72" gate="1" x="12.7" y="96.52" smashed="yes">
 <attribute name="VALUE" x="10.16" y="93.98" size="1.778" layer="96"/>
 </instance>
+<instance part="PWR_IN" gate="J$1" x="15.24" y="127" smashed="yes">
+<attribute name="NAME" x="19.558" y="129.794" size="1.778" layer="95" rot="R90"/>
+</instance>
 </instances>
 <busses>
 </busses>
@@ -7737,13 +7619,11 @@ Diameter: 16mm</description>
 <wire x1="55.88" y1="111.76" x2="55.88" y2="106.68" width="0.1524" layer="91"/>
 </segment>
 <segment>
-<pinref part="PWR_IN" gate="G$1" pin="2"/>
-<pinref part="PWR_IN" gate="G$1" pin="1"/>
-<wire x1="15.24" y1="124.46" x2="12.7" y2="124.46" width="0.1524" layer="91"/>
-<wire x1="12.7" y1="124.46" x2="10.16" y2="124.46" width="0.1524" layer="91"/>
-<junction x="12.7" y="124.46"/>
 <wire x1="10.16" y1="124.46" x2="10.16" y2="121.92" width="0.1524" layer="91"/>
 <pinref part="GND5" gate="1" pin="GND"/>
+<pinref part="PWR_IN" gate="J$1" pin="GND"/>
+<wire x1="13.97" y1="127" x2="13.97" y2="124.46" width="0.1524" layer="91"/>
+<wire x1="13.97" y1="124.46" x2="10.16" y2="124.46" width="0.1524" layer="91"/>
 </segment>
 <segment>
 <pinref part="GND6" gate="1" pin="GND"/>
@@ -9287,9 +9167,9 @@ Diameter: 16mm</description>
 <net name="N$1" class="0">
 <segment>
 <pinref part="D1" gate="1" pin="A"/>
-<wire x1="25.4" y1="119.38" x2="17.78" y2="119.38" width="0.1524" layer="91"/>
-<pinref part="PWR_IN" gate="G$1" pin="3"/>
-<wire x1="17.78" y1="119.38" x2="17.78" y2="124.46" width="0.1524" layer="91"/>
+<wire x1="25.4" y1="119.38" x2="16.51" y2="119.38" width="0.1524" layer="91"/>
+<pinref part="PWR_IN" gate="J$1" pin="PWR"/>
+<wire x1="16.51" y1="127" x2="16.51" y2="119.38" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="N$4" class="6">

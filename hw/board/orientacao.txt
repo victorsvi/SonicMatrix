@@ -2,3 +2,15 @@ componentes smd: top layer, normal
 componentes pth: top layer, espelhado
 texto na top: normal
 texto na bottom: espelhado
+
+
+
+trocar DC jack
+atualizar tc4427
+
+
+
+
+Nomes componentes: 50mil
+nomes IO: 50mil
+Nome placa: 100mil
