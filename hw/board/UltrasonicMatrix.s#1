@@ -7472,9 +7472,9 @@ Diameter: 16mm</description>
 <pinref part="SVO2" gate="1" pin="7"/>
 </segment>
 <segment>
-<pinref part="U1" gate="A" pin="IN_A"/>
-<wire x1="160.02" y1="134.62" x2="144.78" y2="134.62" width="0.1524" layer="91"/>
-<label x="147.32" y="134.62" size="1.778" layer="95"/>
+<pinref part="U1" gate="A" pin="IN_B"/>
+<wire x1="160.02" y1="132.08" x2="144.78" y2="132.08" width="0.1524" layer="91"/>
+<label x="147.32" y="132.08" size="1.778" layer="95"/>
 </segment>
 </net>
 <net name="PA7" class="0">
@@ -7485,9 +7485,9 @@ Diameter: 16mm</description>
 <pinref part="SVO2" gate="1" pin="8"/>
 </segment>
 <segment>
-<pinref part="U1" gate="A" pin="IN_B"/>
-<wire x1="160.02" y1="132.08" x2="144.78" y2="132.08" width="0.1524" layer="91"/>
-<label x="147.32" y="132.08" size="1.778" layer="95"/>
+<pinref part="U1" gate="A" pin="IN_A"/>
+<wire x1="160.02" y1="134.62" x2="144.78" y2="134.62" width="0.1524" layer="91"/>
+<label x="147.32" y="134.62" size="1.778" layer="95"/>
 </segment>
 </net>
 <net name="PA8" class="0">
@@ -7498,9 +7498,9 @@ Diameter: 16mm</description>
 <pinref part="SVO3" gate="1" pin="1"/>
 </segment>
 <segment>
-<pinref part="U2" gate="A" pin="IN_A"/>
-<wire x1="160.02" y1="88.9" x2="144.78" y2="88.9" width="0.1524" layer="91"/>
-<label x="147.32" y="88.9" size="1.778" layer="95"/>
+<pinref part="U2" gate="A" pin="IN_B"/>
+<wire x1="160.02" y1="86.36" x2="144.78" y2="86.36" width="0.1524" layer="91"/>
+<label x="147.32" y="86.36" size="1.778" layer="95"/>
 </segment>
 </net>
 <net name="PA9" class="0">
@@ -7511,9 +7511,9 @@ Diameter: 16mm</description>
 <pinref part="SVO3" gate="1" pin="2"/>
 </segment>
 <segment>
-<pinref part="U2" gate="A" pin="IN_B"/>
-<wire x1="160.02" y1="86.36" x2="144.78" y2="86.36" width="0.1524" layer="91"/>
-<label x="147.32" y="86.36" size="1.778" layer="95"/>
+<pinref part="U2" gate="A" pin="IN_A"/>
+<wire x1="160.02" y1="88.9" x2="144.78" y2="88.9" width="0.1524" layer="91"/>
+<label x="147.32" y="88.9" size="1.778" layer="95"/>
 </segment>
 </net>
 <net name="PA10" class="0">
@@ -8934,9 +8934,9 @@ Diameter: 16mm</description>
 <pinref part="SVI6" gate="1" pin="1"/>
 </segment>
 <segment>
-<pinref part="U32" gate="A" pin="IN_B"/>
-<wire x1="429.26" y1="-187.96" x2="414.02" y2="-187.96" width="0.1524" layer="91"/>
-<label x="416.56" y="-187.96" size="1.778" layer="95"/>
+<pinref part="U32" gate="A" pin="IN_A"/>
+<wire x1="429.26" y1="-185.42" x2="414.02" y2="-185.42" width="0.1524" layer="91"/>
+<label x="416.56" y="-185.42" size="1.778" layer="95"/>
 </segment>
 </net>
 <net name="PA56" class="0">
@@ -9051,9 +9051,9 @@ Diameter: 16mm</description>
 <pinref part="SVI6" gate="1" pin="6"/>
 </segment>
 <segment>
-<pinref part="U30" gate="A" pin="IN_A"/>
-<wire x1="429.26" y1="-93.98" x2="414.02" y2="-93.98" width="0.1524" layer="91"/>
-<label x="416.56" y="-93.98" size="1.778" layer="95"/>
+<pinref part="U30" gate="A" pin="IN_B"/>
+<wire x1="429.26" y1="-96.52" x2="414.02" y2="-96.52" width="0.1524" layer="91"/>
+<label x="416.56" y="-96.52" size="1.778" layer="95"/>
 </segment>
 </net>
 <net name="PA65" class="0">
@@ -9064,9 +9064,9 @@ Diameter: 16mm</description>
 <pinref part="SVI6" gate="1" pin="5"/>
 </segment>
 <segment>
-<pinref part="U30" gate="A" pin="IN_B"/>
-<wire x1="429.26" y1="-96.52" x2="414.02" y2="-96.52" width="0.1524" layer="91"/>
-<label x="416.56" y="-96.52" size="1.778" layer="95"/>
+<pinref part="U30" gate="A" pin="IN_A"/>
+<wire x1="429.26" y1="-93.98" x2="414.02" y2="-93.98" width="0.1524" layer="91"/>
+<label x="416.56" y="-93.98" size="1.778" layer="95"/>
 </segment>
 </net>
 <net name="PA66" class="0">
@@ -9077,9 +9077,9 @@ Diameter: 16mm</description>
 <pinref part="SVI6" gate="1" pin="4"/>
 </segment>
 <segment>
-<pinref part="U31" gate="A" pin="IN_A"/>
-<wire x1="429.26" y1="-139.7" x2="414.02" y2="-139.7" width="0.1524" layer="91"/>
-<label x="416.56" y="-139.7" size="1.778" layer="95"/>
+<pinref part="U31" gate="A" pin="IN_B"/>
+<wire x1="429.26" y1="-142.24" x2="414.02" y2="-142.24" width="0.1524" layer="91"/>
+<label x="416.56" y="-142.24" size="1.778" layer="95"/>
 </segment>
 </net>
 <net name="PA67" class="0">
@@ -9090,9 +9090,9 @@ Diameter: 16mm</description>
 <pinref part="SVI6" gate="1" pin="3"/>
 </segment>
 <segment>
-<pinref part="U31" gate="A" pin="IN_B"/>
-<wire x1="429.26" y1="-142.24" x2="414.02" y2="-142.24" width="0.1524" layer="91"/>
-<label x="416.56" y="-142.24" size="1.778" layer="95"/>
+<pinref part="U31" gate="A" pin="IN_A"/>
+<wire x1="429.26" y1="-139.7" x2="414.02" y2="-139.7" width="0.1524" layer="91"/>
+<label x="416.56" y="-139.7" size="1.778" layer="95"/>
 </segment>
 </net>
 <net name="PA68" class="0">
@@ -9103,9 +9103,9 @@ Diameter: 16mm</description>
 <pinref part="SVI6" gate="1" pin="2"/>
 </segment>
 <segment>
-<pinref part="U32" gate="A" pin="IN_A"/>
-<wire x1="429.26" y1="-185.42" x2="414.02" y2="-185.42" width="0.1524" layer="91"/>
-<label x="416.56" y="-185.42" size="1.778" layer="95"/>
+<pinref part="U32" gate="A" pin="IN_B"/>
+<wire x1="429.26" y1="-187.96" x2="414.02" y2="-187.96" width="0.1524" layer="91"/>
+<label x="416.56" y="-187.96" size="1.778" layer="95"/>
 </segment>
 </net>
 <net name="VIN" class="6">
@@ -9184,7 +9184,7 @@ Diameter: 16mm</description>
 <pinref part="C66" gate="G$1" pin="1"/>
 </segment>
 </net>
-<net name="PD6" class="4">
+<net name="PD7" class="4">
 <segment>
 <pinref part="U1" gate="A" pin="!OUT_A"/>
 <wire x1="195.58" y1="134.62" x2="210.82" y2="134.62" width="0.1524" layer="91"/>
@@ -9194,17 +9194,7 @@ Diameter: 16mm</description>
 <label x="200.66" y="134.62" size="1.778" layer="95"/>
 </segment>
 </net>
-<net name="PD7" class="4">
-<segment>
-<pinref part="U1" gate="A" pin="!OUT_B"/>
-<wire x1="195.58" y1="132.08" x2="210.82" y2="132.08" width="0.1524" layer="91"/>
-<wire x1="210.82" y1="132.08" x2="210.82" y2="124.46" width="0.1524" layer="91"/>
-<pinref part="U$3" gate="G$1" pin="P0"/>
-<wire x1="210.82" y1="124.46" x2="215.9" y2="124.46" width="0.1524" layer="91"/>
-<label x="200.66" y="132.08" size="1.778" layer="95"/>
-</segment>
-</net>
-<net name="PD8" class="4">
+<net name="PD9" class="4">
 <segment>
 <pinref part="U2" gate="A" pin="!OUT_A"/>
 <wire x1="195.58" y1="88.9" x2="210.82" y2="88.9" width="0.1524" layer="91"/>
@@ -9212,16 +9202,6 @@ Diameter: 16mm</description>
 <pinref part="U$6" gate="G$1" pin="P0"/>
 <wire x1="210.82" y1="93.98" x2="215.9" y2="93.98" width="0.1524" layer="91"/>
 <label x="200.66" y="88.9" size="1.778" layer="95"/>
-</segment>
-</net>
-<net name="PD9" class="4">
-<segment>
-<pinref part="U2" gate="A" pin="!OUT_B"/>
-<wire x1="195.58" y1="86.36" x2="210.82" y2="86.36" width="0.1524" layer="91"/>
-<wire x1="210.82" y1="86.36" x2="210.82" y2="78.74" width="0.1524" layer="91"/>
-<pinref part="U$5" gate="G$1" pin="P0"/>
-<wire x1="210.82" y1="78.74" x2="215.9" y2="78.74" width="0.1524" layer="91"/>
-<label x="200.66" y="86.36" size="1.778" layer="95"/>
 </segment>
 </net>
 <net name="PD10" class="4">
@@ -9604,7 +9584,7 @@ Diameter: 16mm</description>
 <label x="469.9" y="-50.8" size="1.778" layer="95"/>
 </segment>
 </net>
-<net name="PD64" class="4">
+<net name="PD65" class="4">
 <segment>
 <pinref part="U30" gate="A" pin="!OUT_A"/>
 <wire x1="464.82" y1="-93.98" x2="480.06" y2="-93.98" width="0.1524" layer="91"/>
@@ -9614,17 +9594,7 @@ Diameter: 16mm</description>
 <label x="469.9" y="-93.98" size="1.778" layer="95"/>
 </segment>
 </net>
-<net name="PD65" class="4">
-<segment>
-<pinref part="U30" gate="A" pin="!OUT_B"/>
-<wire x1="464.82" y1="-96.52" x2="480.06" y2="-96.52" width="0.1524" layer="91"/>
-<wire x1="480.06" y1="-96.52" x2="480.06" y2="-104.14" width="0.1524" layer="91"/>
-<pinref part="U$59" gate="G$1" pin="P0"/>
-<wire x1="480.06" y1="-104.14" x2="485.14" y2="-104.14" width="0.1524" layer="91"/>
-<label x="469.9" y="-96.52" size="1.778" layer="95"/>
-</segment>
-</net>
-<net name="PD66" class="4">
+<net name="PD67" class="4">
 <segment>
 <pinref part="U31" gate="A" pin="!OUT_A"/>
 <wire x1="464.82" y1="-139.7" x2="480.06" y2="-139.7" width="0.1524" layer="91"/>
@@ -9634,17 +9604,7 @@ Diameter: 16mm</description>
 <label x="469.9" y="-139.7" size="1.778" layer="95"/>
 </segment>
 </net>
-<net name="PD67" class="4">
-<segment>
-<pinref part="U31" gate="A" pin="!OUT_B"/>
-<wire x1="464.82" y1="-142.24" x2="480.06" y2="-142.24" width="0.1524" layer="91"/>
-<wire x1="480.06" y1="-142.24" x2="480.06" y2="-149.86" width="0.1524" layer="91"/>
-<pinref part="U$61" gate="G$1" pin="P0"/>
-<wire x1="480.06" y1="-149.86" x2="485.14" y2="-149.86" width="0.1524" layer="91"/>
-<label x="469.9" y="-142.24" size="1.778" layer="95"/>
-</segment>
-</net>
-<net name="PD68" class="4">
+<net name="PD69" class="4">
 <segment>
 <pinref part="U32" gate="A" pin="!OUT_A"/>
 <wire x1="464.82" y1="-185.42" x2="480.06" y2="-185.42" width="0.1524" layer="91"/>
@@ -9652,16 +9612,6 @@ Diameter: 16mm</description>
 <pinref part="U$64" gate="G$1" pin="P0"/>
 <wire x1="480.06" y1="-180.34" x2="485.14" y2="-180.34" width="0.1524" layer="91"/>
 <label x="469.9" y="-185.42" size="1.778" layer="95"/>
-</segment>
-</net>
-<net name="PD69" class="4">
-<segment>
-<pinref part="U32" gate="A" pin="!OUT_B"/>
-<wire x1="464.82" y1="-187.96" x2="480.06" y2="-187.96" width="0.1524" layer="91"/>
-<wire x1="480.06" y1="-187.96" x2="480.06" y2="-195.58" width="0.1524" layer="91"/>
-<pinref part="U$63" gate="G$1" pin="P0"/>
-<wire x1="480.06" y1="-195.58" x2="485.14" y2="-195.58" width="0.1524" layer="91"/>
-<label x="469.9" y="-187.96" size="1.778" layer="95"/>
 </segment>
 </net>
 <net name="PD23" class="4">
@@ -10409,6 +10359,56 @@ Diameter: 16mm</description>
 <pinref part="U$17" gate="G$1" pin="P0"/>
 <wire x1="302.26" y1="124.46" x2="307.34" y2="124.46" width="0.1524" layer="91"/>
 <label x="292.1" y="132.08" size="1.778" layer="95"/>
+</segment>
+</net>
+<net name="PD6" class="4">
+<segment>
+<pinref part="U1" gate="A" pin="!OUT_B"/>
+<wire x1="195.58" y1="132.08" x2="210.82" y2="132.08" width="0.1524" layer="91"/>
+<wire x1="210.82" y1="132.08" x2="210.82" y2="124.46" width="0.1524" layer="91"/>
+<pinref part="U$3" gate="G$1" pin="P0"/>
+<wire x1="210.82" y1="124.46" x2="215.9" y2="124.46" width="0.1524" layer="91"/>
+<label x="200.66" y="132.08" size="1.778" layer="95"/>
+</segment>
+</net>
+<net name="PD8" class="4">
+<segment>
+<pinref part="U2" gate="A" pin="!OUT_B"/>
+<wire x1="195.58" y1="86.36" x2="210.82" y2="86.36" width="0.1524" layer="91"/>
+<wire x1="210.82" y1="86.36" x2="210.82" y2="78.74" width="0.1524" layer="91"/>
+<pinref part="U$5" gate="G$1" pin="P0"/>
+<wire x1="210.82" y1="78.74" x2="215.9" y2="78.74" width="0.1524" layer="91"/>
+<label x="200.66" y="86.36" size="1.778" layer="95"/>
+</segment>
+</net>
+<net name="PD64" class="4">
+<segment>
+<pinref part="U30" gate="A" pin="!OUT_B"/>
+<wire x1="464.82" y1="-96.52" x2="480.06" y2="-96.52" width="0.1524" layer="91"/>
+<wire x1="480.06" y1="-96.52" x2="480.06" y2="-104.14" width="0.1524" layer="91"/>
+<pinref part="U$59" gate="G$1" pin="P0"/>
+<wire x1="480.06" y1="-104.14" x2="485.14" y2="-104.14" width="0.1524" layer="91"/>
+<label x="469.9" y="-96.52" size="1.778" layer="95"/>
+</segment>
+</net>
+<net name="PD66" class="4">
+<segment>
+<pinref part="U31" gate="A" pin="!OUT_B"/>
+<wire x1="464.82" y1="-142.24" x2="480.06" y2="-142.24" width="0.1524" layer="91"/>
+<wire x1="480.06" y1="-142.24" x2="480.06" y2="-149.86" width="0.1524" layer="91"/>
+<pinref part="U$61" gate="G$1" pin="P0"/>
+<wire x1="480.06" y1="-149.86" x2="485.14" y2="-149.86" width="0.1524" layer="91"/>
+<label x="469.9" y="-142.24" size="1.778" layer="95"/>
+</segment>
+</net>
+<net name="PD68" class="4">
+<segment>
+<pinref part="U32" gate="A" pin="!OUT_B"/>
+<wire x1="464.82" y1="-187.96" x2="480.06" y2="-187.96" width="0.1524" layer="91"/>
+<wire x1="480.06" y1="-187.96" x2="480.06" y2="-195.58" width="0.1524" layer="91"/>
+<pinref part="U$63" gate="G$1" pin="P0"/>
+<wire x1="480.06" y1="-195.58" x2="485.14" y2="-195.58" width="0.1524" layer="91"/>
+<label x="469.9" y="-187.96" size="1.778" layer="95"/>
 </segment>
 </net>
 </nets>
