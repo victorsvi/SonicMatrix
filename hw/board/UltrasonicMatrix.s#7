@@ -5930,7 +5930,7 @@ Diameter: 16mm</description>
 <variantdefs>
 </variantdefs>
 <classes>
-<class number="0" name="default" width="0.4572" drill="0.254">
+<class number="0" name="default" width="0.508" drill="0.254">
 <clearance class="0" value="0.205"/>
 </class>
 <class number="1" name="+18V" width="0.762" drill="0">
@@ -5943,7 +5943,7 @@ Diameter: 16mm</description>
 </class>
 <class number="5" name="GND" width="0.762" drill="0">
 </class>
-<class number="6" name="+12V" width="1.27" drill="0">
+<class number="6" name="+12V" width="1.016" drill="0">
 </class>
 </classes>
 <parts>
