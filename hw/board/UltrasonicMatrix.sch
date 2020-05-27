@@ -5640,53 +5640,6 @@ W = angled&lt;p&gt;
 </deviceset>
 </devicesets>
 </library>
-<library name="ultrasonic">
-<packages>
-<package name="TCT40-16">
-<pad name="P1" x="5" y="0" drill="1" diameter="3"/>
-<pad name="P0" x="-5" y="0" drill="1" diameter="3"/>
-<circle x="0" y="0" radius="8" width="0.4064" layer="51"/>
-<text x="-3" y="2" size="1.27" layer="25">&gt;NAME</text>
-<text x="-3" y="-4" size="1.27" layer="27">&gt;VALUE</text>
-</package>
-</packages>
-<symbols>
-<symbol name="TCT40-16">
-<pin name="P0" x="5.08" y="2.54" length="short" rot="R180"/>
-<pin name="P1" x="5.08" y="0" length="short" rot="R180"/>
-<wire x1="1.27" y1="-1.27" x2="1.27" y2="3.81" width="0.254" layer="94"/>
-<wire x1="1.27" y1="3.81" x2="2.54" y2="3.81" width="0.254" layer="94"/>
-<wire x1="2.54" y1="3.81" x2="2.54" y2="-1.27" width="0.254" layer="94"/>
-<wire x1="2.54" y1="-1.27" x2="1.27" y2="-1.27" width="0.254" layer="94"/>
-<wire x1="1.27" y1="3.81" x2="-2.54" y2="7.62" width="0.254" layer="94"/>
-<wire x1="-2.54" y1="7.62" x2="-2.54" y2="-5.08" width="0.254" layer="94"/>
-<wire x1="-2.54" y1="-5.08" x2="1.27" y2="-1.27" width="0.254" layer="94"/>
-<text x="1.27" y="-2.54" size="1.27" layer="95">&gt;NAME</text>
-<text x="1.27" y="-5.08" size="1.27" layer="96">&gt;VALUE</text>
-</symbol>
-</symbols>
-<devicesets>
-<deviceset name="TCT40-16" uservalue="yes">
-<description>TCT40-16 T/R Ultrasonic transducer.
-40kHz.
-Diameter: 16mm</description>
-<gates>
-<gate name="G$1" symbol="TCT40-16" x="0" y="0"/>
-</gates>
-<devices>
-<device name="" package="TCT40-16">
-<connects>
-<connect gate="G$1" pin="P0" pad="P0"/>
-<connect gate="G$1" pin="P1" pad="P1"/>
-</connects>
-<technologies>
-<technology name=""/>
-</technologies>
-</device>
-</devices>
-</deviceset>
-</devicesets>
-</library>
 <library name="switch-omron" urn="urn:adsk.eagle:library:377">
 <description>&lt;b&gt;Omron Switches&lt;/b&gt;&lt;p&gt;
 &lt;author&gt;Created by librarian@cadsoft.de&lt;/author&gt;</description>
@@ -5824,6 +5777,14 @@ Diameter: 16mm</description>
 <circle x="0" y="0" radius="8" width="0.4064" layer="51"/>
 <text x="-3" y="2" size="1.27" layer="25">&gt;NAME</text>
 <text x="-3" y="-4" size="1.27" layer="27">&gt;VALUE</text>
+<wire x1="3.5" y1="-1.5" x2="3.5" y2="-2.5" width="0.254" layer="51"/>
+<wire x1="3.5" y1="-2.5" x2="2.5" y2="-1.5" width="0.254" layer="51"/>
+<wire x1="2.5" y1="-1.5" x2="3.5" y2="-1.5" width="0.254" layer="51"/>
+<wire x1="2.9" y1="-1.7" x2="3.3" y2="-1.7" width="0.254" layer="51"/>
+<wire x1="3.3" y1="-1.7" x2="3.3" y2="-2.1" width="0.254" layer="51"/>
+<wire x1="3.3" y1="-2.1" x2="3.1" y2="-1.9" width="0.254" layer="51"/>
+<circle x="5" y="0" radius="0.70710625" width="0.254" layer="51"/>
+<circle x="-5" y="0" radius="0.70710625" width="0.254" layer="51"/>
 </package>
 </packages>
 <symbols>
@@ -5988,7 +5949,7 @@ Diameter: 16mm</description>
 <part name="V7" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+18V" device="" value="V20"/>
 <part name="GND11" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="U$7" library="TCT40" deviceset="TCT40-16" device=""/>
-<part name="U$8" library="ultrasonic" deviceset="TCT40-16" device=""/>
+<part name="U$8" library="TCT40" deviceset="TCT40-16" device=""/>
 <part name="U4" library="TC4427EOA" deviceset="TC4427EOA" device=""/>
 <part name="V8" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+18V" device="" value="V20"/>
 <part name="GND12" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
@@ -10414,6 +10375,120 @@ Diameter: 16mm</description>
 </nets>
 </sheet>
 </sheets>
+<errors>
+<approved hash="104,1,195.58,139.7,U1,VDD,+18V,,,"/>
+<approved hash="104,1,195.58,93.98,U2,VDD,+18V,,,"/>
+<approved hash="104,1,195.58,48.26,U3,VDD,+18V,,,"/>
+<approved hash="104,1,195.58,2.54,U4,VDD,+18V,,,"/>
+<approved hash="104,1,195.58,-43.18,U5,VDD,+18V,,,"/>
+<approved hash="104,1,195.58,-88.9,U6,VDD,+18V,,,"/>
+<approved hash="104,1,195.58,-134.62,U7,VDD,+18V,,,"/>
+<approved hash="104,1,195.58,-180.34,U8,VDD,+18V,,,"/>
+<approved hash="104,1,287.02,139.7,U9,VDD,+18V,,,"/>
+<approved hash="104,1,287.02,93.98,U10,VDD,+18V,,,"/>
+<approved hash="104,1,287.02,48.26,U11,VDD,+18V,,,"/>
+<approved hash="104,1,287.02,2.54,U12,VDD,+18V,,,"/>
+<approved hash="104,1,287.02,-43.18,U13,VDD,+18V,,,"/>
+<approved hash="104,1,287.02,-88.9,U14,VDD,+18V,,,"/>
+<approved hash="104,1,287.02,-134.62,U15,VDD,+18V,,,"/>
+<approved hash="104,1,287.02,-180.34,U16,VDD,+18V,,,"/>
+<approved hash="104,1,375.92,139.7,U17,VDD,+18V,,,"/>
+<approved hash="104,1,375.92,93.98,U18,VDD,+18V,,,"/>
+<approved hash="104,1,375.92,48.26,U19,VDD,+18V,,,"/>
+<approved hash="104,1,375.92,2.54,U20,VDD,+18V,,,"/>
+<approved hash="104,1,375.92,-43.18,U21,VDD,+18V,,,"/>
+<approved hash="104,1,375.92,-88.9,U22,VDD,+18V,,,"/>
+<approved hash="104,1,375.92,-134.62,U23,VDD,+18V,,,"/>
+<approved hash="104,1,375.92,-180.34,U24,VDD,+18V,,,"/>
+<approved hash="104,1,464.82,139.7,U25,VDD,+18V,,,"/>
+<approved hash="104,1,464.82,93.98,U26,VDD,+18V,,,"/>
+<approved hash="104,1,464.82,48.26,U27,VDD,+18V,,,"/>
+<approved hash="104,1,464.82,2.54,U28,VDD,+18V,,,"/>
+<approved hash="104,1,464.82,-43.18,U29,VDD,+18V,,,"/>
+<approved hash="104,1,464.82,-88.9,U30,VDD,+18V,,,"/>
+<approved hash="104,1,464.82,-134.62,U31,VDD,+18V,,,"/>
+<approved hash="104,1,464.82,-180.34,U32,VDD,+18V,,,"/>
+<approved hash="104,1,16.51,127,PWR_IN,PWR,N$1,,,"/>
+<approved hash="113,1,93.9377,-4.79044,SVI1,,,,,"/>
+<approved hash="113,1,93.9377,53.6296,SVI3,,,,,"/>
+<approved hash="113,1,60.6704,-27.94,SVI7,,,,,"/>
+<approved hash="113,1,90.4596,122.96,VIN_ENABLE,,,,,"/>
+<approved hash="113,1,93.9377,23.1496,SVI2,,,,,"/>
+<approved hash="113,1,30.5223,51.0896,SVO4,,,,,"/>
+<approved hash="113,1,30.5223,23.1496,SVO5,,,,,"/>
+<approved hash="113,1,30.5223,-4.79044,SVO6,,,,,"/>
+<approved hash="113,1,12.6577,-4.79044,SVI6,,,,,"/>
+<approved hash="113,1,12.6577,23.1496,SVI5,,,,,"/>
+<approved hash="113,1,12.6577,51.0896,SVI4,,,,,"/>
+<approved hash="113,1,111.802,-4.79044,SVO1,,,,,"/>
+<approved hash="113,1,111.802,23.1496,SVO2,,,,,"/>
+<approved hash="113,1,111.802,53.6296,SVO3,,,,,"/>
+<approved hash="113,1,217.615,123.19,U$3,,,,,"/>
+<approved hash="113,1,217.615,138.43,U$4,,,,,"/>
+<approved hash="113,1,217.615,77.47,U$5,,,,,"/>
+<approved hash="113,1,217.615,92.71,U$6,,,,,"/>
+<approved hash="113,1,217.615,31.75,U$7,,,,,"/>
+<approved hash="113,1,217.615,46.99,U$8,,,,,"/>
+<approved hash="113,1,217.615,-13.97,U$9,,,,,"/>
+<approved hash="113,1,217.615,1.27,U$10,,,,,"/>
+<approved hash="113,1,217.615,-59.69,U$1,,,,,"/>
+<approved hash="113,1,217.615,-44.45,U$2,,,,,"/>
+<approved hash="113,1,217.615,-105.41,U$11,,,,,"/>
+<approved hash="113,1,217.615,-90.17,U$12,,,,,"/>
+<approved hash="113,1,217.615,-151.13,U$13,,,,,"/>
+<approved hash="113,1,217.615,-135.89,U$14,,,,,"/>
+<approved hash="113,1,217.615,-196.85,U$15,,,,,"/>
+<approved hash="113,1,217.615,-181.61,U$16,,,,,"/>
+<approved hash="113,1,309.055,123.19,U$17,,,,,"/>
+<approved hash="113,1,309.055,138.43,U$18,,,,,"/>
+<approved hash="113,1,309.055,77.47,U$19,,,,,"/>
+<approved hash="113,1,309.055,92.71,U$20,,,,,"/>
+<approved hash="113,1,309.055,31.75,U$21,,,,,"/>
+<approved hash="113,1,309.055,46.99,U$22,,,,,"/>
+<approved hash="113,1,309.055,-13.97,U$23,,,,,"/>
+<approved hash="113,1,309.055,1.27,U$24,,,,,"/>
+<approved hash="113,1,309.055,-59.69,U$25,,,,,"/>
+<approved hash="113,1,309.055,-44.45,U$26,,,,,"/>
+<approved hash="113,1,309.055,-105.41,U$27,,,,,"/>
+<approved hash="113,1,309.055,-90.17,U$28,,,,,"/>
+<approved hash="113,1,309.055,-151.13,U$29,,,,,"/>
+<approved hash="113,1,309.055,-135.89,U$30,,,,,"/>
+<approved hash="113,1,309.055,-196.85,U$31,,,,,"/>
+<approved hash="113,1,309.055,-181.61,U$32,,,,,"/>
+<approved hash="113,1,397.954,123.19,U$33,,,,,"/>
+<approved hash="113,1,397.954,138.43,U$34,,,,,"/>
+<approved hash="113,1,397.954,77.47,U$35,,,,,"/>
+<approved hash="113,1,397.954,92.71,U$36,,,,,"/>
+<approved hash="113,1,397.954,31.75,U$37,,,,,"/>
+<approved hash="113,1,397.954,46.99,U$38,,,,,"/>
+<approved hash="113,1,397.954,-13.97,U$39,,,,,"/>
+<approved hash="113,1,397.954,1.27,U$40,,,,,"/>
+<approved hash="113,1,397.954,-59.69,U$41,,,,,"/>
+<approved hash="113,1,397.954,-44.45,U$42,,,,,"/>
+<approved hash="113,1,397.954,-105.41,U$43,,,,,"/>
+<approved hash="113,1,397.954,-90.17,U$44,,,,,"/>
+<approved hash="113,1,397.954,-151.13,U$45,,,,,"/>
+<approved hash="113,1,397.954,-135.89,U$46,,,,,"/>
+<approved hash="113,1,397.954,-196.85,U$47,,,,,"/>
+<approved hash="113,1,397.954,-181.61,U$48,,,,,"/>
+<approved hash="113,1,486.855,123.19,U$49,,,,,"/>
+<approved hash="113,1,486.855,138.43,U$50,,,,,"/>
+<approved hash="113,1,486.855,77.47,U$51,,,,,"/>
+<approved hash="113,1,486.855,92.71,U$52,,,,,"/>
+<approved hash="113,1,486.855,31.75,U$53,,,,,"/>
+<approved hash="113,1,486.855,46.99,U$54,,,,,"/>
+<approved hash="113,1,486.855,-13.97,U$55,,,,,"/>
+<approved hash="113,1,486.855,1.27,U$56,,,,,"/>
+<approved hash="113,1,486.855,-59.69,U$57,,,,,"/>
+<approved hash="113,1,486.855,-44.45,U$58,,,,,"/>
+<approved hash="113,1,486.855,-105.41,U$59,,,,,"/>
+<approved hash="113,1,486.855,-90.17,U$60,,,,,"/>
+<approved hash="113,1,486.855,-151.13,U$61,,,,,"/>
+<approved hash="113,1,486.855,-135.89,U$62,,,,,"/>
+<approved hash="113,1,486.855,-196.85,U$63,,,,,"/>
+<approved hash="113,1,486.855,-181.61,U$64,,,,,"/>
+<approved hash="113,1,-5.08,106.385,RESET,,,,,"/>
+</errors>
 </schematic>
 </drawing>
 <compatibility>
