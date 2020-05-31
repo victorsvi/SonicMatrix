@@ -5860,6 +5860,12 @@ Diameter: 16mm</description>
 <label x="200.66" y="132.08" size="1.778" layer="95"/>
 </segment>
 </net>
+<net name="N$2" class="0">
+<segment>
+<pinref part="SVI10" gate="1" pin="5"/>
+<wire x1="15.24" y1="50.8" x2="27.94" y2="50.8" width="0.1524" layer="91"/>
+</segment>
+</net>
 </nets>
 </sheet>
 </sheets>
