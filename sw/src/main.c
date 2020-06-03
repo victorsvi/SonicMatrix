@@ -70,7 +70,7 @@
 //#define DEBUG_INPUT //Use to debug the serial input parsing. Will echo the interpretation of the inputed string
 //#define DEBUG_PATTERN //Use to debug the pattern generation routine. Will serial out the pattern for each transducer of the matrix when the pattern is calculated.
 //#define DEBUG_TRAJ //Use to debug the trajectory planning routine. Will serial out the trajectory way points and the speed calculation data.
-//#define DEBUG_TIMER 0xAAAA //Use to debug the transducer signal generation (waveform, frequency accuracy, jitter). Will configure the matrix to output the defined pattern on all transducers. Note that the pattern generation will be overridden and the phase compensation will be disabled. The value defined is a binary unsigned representing the pattern to be outputted (0xAAAA = #_#_#_#_#_#_#_#_)
+#define DEBUG_TIMER 0xAAAA //Use to debug the transducer signal generation (waveform, frequency accuracy, jitter). Will configure the matrix to output the defined pattern on all transducers. Note that the pattern generation will be overridden and the phase compensation will be disabled. The value defined is a binary unsigned representing the pattern to be outputted (0xAAAA = #_#_#_#_#_#_#_#_)
 
 #define TRAJ_RES 1 //trajectory maximum resolution in millimeters (not fully implemented)
 #define TRAJ_MAXSTEPS 64 //maximum steps of the trajectory (max 255). 
@@ -87,8 +87,8 @@ void transd_array_load ( /*t_transd_array *transd_array*/ );
 void output_reset ();
 uint8_t traj_calc (const uint8_t from_x, const uint8_t from_y, const uint8_t from_z, const uint8_t to_x, const uint8_t to_y, const uint8_t to_z );
 void traj_calc_step (uint8_t step_idx, const uint8_t duty_cycle, const uint8_t focus_x, const uint8_t focus_y, const uint8_t focus_z );
-uint8_t traj_solve_y (uint8_t x, uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2 );
-uint8_t traj_solve_z (uint8_t x, uint8_t x1, uint8_t z1, uint8_t x2, uint8_t z2 );
+//uint8_t traj_solve_y (uint8_t x, uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2 );
+//uint8_t traj_solve_z (uint8_t x, uint8_t x1, uint8_t z1, uint8_t x2, uint8_t z2 );
 uint32_t traj_calc_speed (const uint8_t s, const uint8_t from_x, const uint8_t from_y, const uint8_t from_z, const uint8_t to_x, const uint8_t to_y, const uint8_t to_z );
 uint8_t input_parse ();
 void input_parse_token (char *token);
@@ -125,8 +125,14 @@ enum e_mode { // lists the operation modes
 };
 
 struct s_traj_ctrl { // position and other parameters
-	uint8_t x = 0, y = 0, z = 0, d = 128, s = 10; // represent the current focus coordinates (in millimeters), duty cycle (discrete representation, [0,255] = [0°,360°]) and speed (in millimeters per second).
-	uint8_t lastx = 0, lasty = 0, lastz = 0; // represent the focus coordinates before the new command (or last position) (in millimeters)
+	uint8_t x = 0;
+	uint8_t y = 0;
+	uint8_t z = 0;
+	uint8_t d = 128;
+	uint8_t s = 10; // represent the current focus coordinates (in millimeters), duty cycle (discrete representation, [0,255] = [0°,360°]) and speed (in millimeters per second).
+	uint8_t lastx = 0;
+	uint8_t lasty = 0;
+	uint8_t lastz = 0; // represent the focus coordinates before the new command (or last position) (in millimeters)
 };
 
 struct s_pin { // represents a pin mask
@@ -311,7 +317,14 @@ void setup () {
 	DDRJ = 0xFF;// |= 0x03; //xxxxxx11
 	DDRK = 0xFF; //11111111
 	DDRL = 0xFF; //11111111
-	
+
+  TIMSK0 = 0; 
+  TIMSK1 = 0; 
+  TIMSK2 = 0; 
+  TIMSK3 = 0; 
+  TIMSK4 = 0; 
+  TIMSK5 = 0; 
+  
 	output_reset (); //initialize all pins as LOW
 	
 	#ifdef DEBUG_PINS
@@ -343,12 +356,12 @@ void loop () {
 	
 	//it accepts serial data even when the output is active, but the parsing and executing of the commands will be slower as the timer 4 will generate a lot of interrupts.
 	//it's recommended to send a "i" command before sending commands while the output is active;
-	if(input_parse()) { // if there's input data on serial line
-		#ifdef DEBUG_INPUT
-		debug_input();
-		#endif
-		input_execute(); //execute the parsed parameters
-	}
+//	if(input_parse()) { // if there's input data on serial line
+//		#ifdef DEBUG_INPUT
+//		debug_input();
+//		#endif
+//		input_execute(); //execute the parsed parameters
+//	}
  	
 } //loop
 
@@ -359,12 +372,43 @@ void loop () {
  */
 ISR( TIMER4_COMPA_vect ) {
 
-	//buffer the indexes to optimize access as they're volatile
-	uint8_t phase_idx = array_phase_idx;
-	uint8_t step_idx = traj_step_idx;
-	
-	// Just copy the port state from the buffer
-	PORTA = traj_port_buffer[step_idx][phase_idx][0];
+//	uint8_t *ptr;
+//	ptr = &traj_port_buffer[traj_step_idx][array_phase_idx][0];
+//  PORTA = *ptr; ptr++;
+//  PORTB = *ptr; ptr++;
+//  PORTC = *ptr; ptr++;
+//  PORTD = *ptr; ptr++;
+//  PORTF = *ptr; ptr++;
+//  PORTG = *ptr; ptr++;
+//  PORTH = *ptr; ptr++;
+//  PORTJ = *ptr; ptr++;
+//  PORTK = *ptr; ptr++;
+//  PORTL = *ptr; //ptr++;
+
+  asm("
+    //lds r20, traj_step_idx
+    //lds r21, array_phase_idx
+    //ponteiro buffer
+    //lds X, &traj_port_buffer;
+    //copia do buffer pra porta
+    lds 0x02, X PORTA
+    inc X
+    ..
+
+    //atualiza phaseidx
+    lds r21, array_phase_idx //carrega
+    inc r21 //incrementa
+    ori r21, 0x09 //loop 0-9 reseta bit 4
+    sts array_phase_idx, r21
+    ..
+    " : "x" (&traj_port_buffer[traj_step_idx][array_phase_idx][0]) : "" : "r21");
+
+  //buffer the indexes to optimize access as they're volatile
+  uint8_t phase_idx = array_phase_idx;
+  uint8_t step_idx = traj_step_idx;
+  
+  // Just copy the port state from the buffer
+  PORTA = traj_port_buffer[step_idx][phase_idx][0];
 	PORTB = traj_port_buffer[step_idx][phase_idx][1];
 	PORTC = traj_port_buffer[step_idx][phase_idx][2];
 	PORTD = traj_port_buffer[step_idx][phase_idx][3];
@@ -377,13 +421,33 @@ ISR( TIMER4_COMPA_vect ) {
 	PORTK = traj_port_buffer[step_idx][phase_idx][8];
 	PORTL = traj_port_buffer[step_idx][phase_idx][9];
 	
-	if( phase_idx < ARRAY_PHASERES ) { //increments the current phase index. It will cycle between 0 and (ARRAY_PHASERES - 1)
-		array_phase_idx++;
-	}
-	else {
-		array_phase_idx = 0; 
-	}
+  //if( phase_idx < ARRAY_PHASERES ) { //increments the current phase index. It will cycle between 0 and (ARRAY_PHASERES - 1)
+//	if( array_phase_idx < ARRAY_PHASERES ) { //increments the current phase index. It will cycle between 0 and (ARRAY_PHASERES - 1)
+//		array_phase_idx++;
+//	}
+//	else {
+//		array_phase_idx = 0; 
+//	}
+//array_phase_idx++;
+//array_phase_idx &= 0x09;
+array_phase_idx = (array_phase_idx + 1) & 0x09;
+ /*
+0000
+0001
+0010
+0011
+0100
+0101
+0110
+0111
+se for 8 bits, pode só incrementar a apagar o bit da esquerda
+1000
+1001
 
+1010
+1011
+
+*/
 } //ISR T4
 
 /**
@@ -444,8 +508,8 @@ uint8_t traj_calc (const uint8_t from_x, const uint8_t from_y, const uint8_t fro
 		
 		for(; (from_x < to_x) ? (traj_x <= to_x) : (traj_x >= to_x); (from_x < to_x) ? (traj_x += TRAJ_RES) : (traj_x -= TRAJ_RES) ) { //iterate trough the displacement on the x axis in TRAJ_RES sized steps
 			//calculates the rounded value for the other axis
-			traj_y = traj_solve_y (traj_x, to_x, to_y, from_x, from_y ); 
-			traj_z = traj_solve_y (traj_x, to_x, to_z, from_x, from_z ); //the 3D coordinates can be calculated as two independent 2D lines
+			traj_y = line_solve_y (traj_x, to_x, to_y, from_x, from_y ); 
+			traj_z = line_solve_y (traj_x, to_x, to_z, from_x, from_z ); //the 3D coordinates can be calculated as two independent 2D lines
 			traj_calc_step (step_idx, traj_ctrl.d, traj_x, traj_y, traj_z ); //generates the patterns for the way point
 			step_idx++;
 			if(step_idx >= TRAJ_MAXSTEPS) { // limits the maximum number of way points to not overflow the output buffer
@@ -460,7 +524,7 @@ uint8_t traj_calc (const uint8_t from_x, const uint8_t from_y, const uint8_t fro
 		
 		for(; (from_y < to_y) ? (traj_y <= to_y) : (traj_y >= to_y); (from_y < to_y) ? (traj_y += TRAJ_RES) : (traj_y -= TRAJ_RES) ) { //iterate trough the displacement on the y axis in TRAJ_RES sized steps
 			//calculates the rounded value for the other axis
-			traj_z = traj_solve_y (traj_y, to_y, to_z, from_y, from_z ); //the 3D coordinates can be calculated as two independent 2D lines
+			traj_z = line_solve_y (traj_y, to_y, to_z, from_y, from_z ); //the 3D coordinates can be calculated as two independent 2D lines
 			traj_calc_step (step_idx, traj_ctrl.d, traj_x, traj_y, traj_z ); //generates the patterns for the way point
 			step_idx++;
 			if(step_idx >= TRAJ_MAXSTEPS) { // limits the maximum number of way points to not overflow the output buffer
