@@ -36,7 +36,7 @@ void setTimer4 () {
 	TCNT4  = 0;
 
 	//compare match register
-	OCR4A = 40 - 1; // value for 16MHz clock, 1 prescaler, 400kHz frequency (the timer stats at zero hence the -1)
+	OCR4A = 1;//40 - 1; // value for 16MHz clock, 1 prescaler, 400kHz frequency (the timer stats at zero hence the -1)
 	
 	TCCR4B |= (1 << WGM12); // CTC mode
 	TCCR4B |= (1 << CS10); // 1 prescaler 

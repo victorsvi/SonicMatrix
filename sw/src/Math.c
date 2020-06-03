@@ -49,11 +49,11 @@ uint8_t line_solve_y (uint8_t x, uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2 
 	uint8_t y;
 	
 	//using 2 decimal places fixed point (force cast before multiplication)
-	_x  = int32_t( x) * 100; 
-	_x1 = int32_t(x1) * 100; 
-	_y1 = int32_t(y1) * 100; 
-	_x2 = int32_t(x2) * 100; 
-	_y2 = int32_t(y2) * 100;
+	_x  = ((int32_t) x) * 100; 
+	_x1 = ((int32_t) x1) * 100; 
+	_y1 = ((int32_t) y1) * 100; 
+	_x2 = ((int32_t) x2) * 100; 
+	_y2 = ((int32_t) y2) * 100;
 	
 	/*
 		Find a coordinate of a line trough two points
@@ -74,7 +74,7 @@ uint8_t line_solve_y (uint8_t x, uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2 
 	_y /= 100;
 	
 	//the point will always be at the first quadrant (x >= 0 and y >= 0)
-	y = uint8_t(_y);
+	y = ((uint8_t) _y);
 	
 	return y;
 	

@@ -264,16 +264,17 @@ uint8_t transd_array_calcfocus( /*t_transd_array *transd_array,*/ const uint8_t 
 			
 			// here is an example of the calculation of the position in one axis (elem_diameter = 16, elem_separation = 2)
 
-			  // diameter           separation
-			 // |-------|          |--|
-			   // _____      _____      _____
-			  // /     \    /     \    /     \
-			 // |   -   |  |   -   |  |   -   |
-			  // \_____/    \_____/    \_____/
+			  /* diameter           separation
+			  |-------|          |--|
+			    _____      _____      _____
+			   /     \    /     \    /     \
+			  |   -   |  |   -   |  |   -   |
+			   \_____/    \_____/    \_____/
 
-			 // |   |   |  |   |   |  |   |   |
-			 // 0   8  16  18  26 34  36  44 52
-			 // ------------------------------->
+			  |   |   |  |   |   |  |   |   |
+			  0   8  16  18  26 34  36  44 52
+			  ------------------------------->
+       */
 			dist_x = (TRANS_DIAMETER / 2) + ((TRANS_DIAMETER+TRANS_SEPARATION) * x); //calculates the x position of the center of the transducer on the array
 			dist_y = (TRANS_DIAMETER / 2) + ((TRANS_DIAMETER+TRANS_SEPARATION) * y); //calculates the y position of the center of the transducer on the array
 			#ifdef DEBUG
@@ -732,4 +733,3 @@ uint16_t transd_getPattern( /*const uint8_t phase_res,*/ const uint8_t phase, co
 
 	return 0;
 }*/ //transd_calcflat
-
