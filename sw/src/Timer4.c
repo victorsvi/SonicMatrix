@@ -55,7 +55,7 @@ void enableTimer4 () {
 	
 	noInterrupts(); // disable all interrupts
 	
-	TIMSK4 |= (1 << OCIE1A); // enable timer compare interrupt
+//	TIMSK4 |= (1 << OCIE1A); // enable timer compare interrupt
 	
 	interrupts(); // enable all interrupts
 	
