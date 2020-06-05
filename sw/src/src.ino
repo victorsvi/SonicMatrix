@@ -20,7 +20,7 @@
 	BUGS
 	
 	Se a velocidade for muito lenta no eixo, pode dar overflow no timer :o
-	Se o deslocamento tiver mais de 64 milimetros em um eixo, o movimento é cortado.
+	Se o deslocamento tiver mais de TRAJ_MAXSTEPS milimetros em um eixo, o movimento é cortado.
 */
 
 /* 
@@ -51,6 +51,14 @@
  * to other sizes. Just be careful to not run out of dynamic memory by
  * increasing the output buffer size.
  *
+ * TO COMPILE:
+ * To perform a very fast check if there's input serial data, the Arduino core library
+ * must be modified. The modification is to place the variables 
+ * "volatile rx_buffer_index_t _rx_buffer_head = 0;" and 
+ * "volatile rx_buffer_index_t _rx_buffer_tail = 0;" in the public section of the 
+ * HardwareSerial.h header. Note that the compiling process may make a copy of the
+ * core files, so check if this modification is done in the cached files also.
+ *
  * by Victor Salvi (victorsvi@gmail.com), 2020.
  */
  
@@ -58,7 +66,7 @@
 #include <Arduino.h>
 #include "Ultrasonic.h"
 #include "Debug.h"
-#include "Timer4.h"
+//#include "Timer4.h"
 #include "Timer3.h"
 #include "Math.h"
 
@@ -70,10 +78,10 @@
 #define DEBUG_INPUT //Use to debug the serial input parsing. Will echo the interpretation of the inputed string
 //#define DEBUG_PATTERN //Use to debug the pattern generation routine. Will serial out the pattern for each transducer of the matrix when the pattern is calculated.
 //#define DEBUG_TRAJ //Use to debug the trajectory planning routine. Will serial out the trajectory way points and the speed calculation data.
-#define DEBUG_TIMER 0x000F //Use to debug the transducer signal generation (waveform, frequency accuracy, jitter). Will configure the matrix to output the defined pattern on all transducers. Note that the pattern generation will be overridden and the phase compensation will be disabled. The value defined is a binary unsigned representing the pattern to be outputted (0xAAAA = #_#_#_#_#_#_#_#_)
+#define DEBUG_TIMER 0x00AA //Use to debug the transducer signal generation (waveform, frequency accuracy, jitter). Will configure the matrix to output the defined pattern on all transducers. Note that the pattern generation will be overridden and the phase compensation will be disabled. The value defined is a binary unsigned representing the pattern to be outputted (0xAAAA = #_#_#_#_#_#_#_#_)
 
 #define TRAJ_RES 1 //trajectory maximum resolution in millimeters (not fully implemented)
-#define TRAJ_MAXSTEPS 64 //maximum steps of the trajectory (max 255). 
+#define TRAJ_MAXSTEPS 85 //maximum steps of the trajectory (max 255). 
 
 /* MACROS */
 
@@ -85,10 +93,9 @@ ISR( TIMER4_COMPA_vect );
 ISR( TIMER3_COMPA_vect );
 void transd_array_load ( /*t_transd_array *transd_array*/ );
 void output_reset ();
+void clear_buffer ();
 uint8_t traj_calc (const uint8_t from_x, const uint8_t from_y, const uint8_t from_z, const uint8_t to_x, const uint8_t to_y, const uint8_t to_z );
 void traj_calc_step (uint8_t step_idx, const uint8_t duty_cycle, const uint8_t focus_x, const uint8_t focus_y, const uint8_t focus_z );
-//uint8_t traj_solve_y (uint8_t x, uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2 );
-//uint8_t traj_solve_z (uint8_t x, uint8_t x1, uint8_t z1, uint8_t x2, uint8_t z2 );
 uint32_t traj_calc_speed (const uint8_t s, const uint8_t from_x, const uint8_t from_y, const uint8_t from_z, const uint8_t to_x, const uint8_t to_y, const uint8_t to_z );
 uint8_t input_parse ();
 void input_parse_token (char *token);
@@ -143,7 +150,7 @@ struct s_pin { // represents a pin mask
 /* GLOBAL VARIABLES */
 
 const uint8_t ARRAY_CALIBRATION[ARRAY_SIZE_X][ARRAY_SIZE_Y][2] PROGMEM = { // maps the pin of each transducer of the matrix (Arduino pin) and it's phase compensation value
-	//pin numer (arduino convention), phase compensation ([0,255] = [0°,360°])
+	//pin number (Arduino convention), phase compensation ([0,255] = [0°,360°])
 	//x0, y0,
 	//x0, y1,
 	//0 , 0,
@@ -303,16 +310,9 @@ uint8_t traj_port_buffer[TRAJ_MAXSTEPS][ARRAY_PHASERES][10]; //buffers the ports
 volatile uint8_t *port_buffer_step_addr = &traj_port_buffer[0][0][0]; //holds the address for the section of the traj_port_buffer vector for the current traj_step_idx (must be assigned with &traj_port_buffer[traj_step_idx][0][0] when traj_step_idx is changed)
 
 void setup () {
-  
-//	TIMSK0 = 0; 
-//	TIMSK1 = 0; 
-//	TIMSK2 = 0; 
-//	TIMSK3 = 0; 
-//	TIMSK4 = 0; 
-//	TIMSK5 = 0; 
-	
+   	
 	Serial.begin(115200);
-	
+		
 	//set ports as output (bit high = output)
 	DDRA = 0xFF; //11111111
 	DDRB = 0xFF; //11111111
@@ -333,7 +333,7 @@ void setup () {
 	debug_pins ();
 	#endif
 	
-	setTimer4(); //programs the timer 4 (signal generation)
+	//setTimer4(); //programs the timer 4 (signal generation)
 	
 	/*transd_array = transd_array_init( ARRAY_SIZE_X, ARRAY_SIZE_Y, TRANS_DIAMETER, TRANS_SEPARATION, ARRAY_PHASERES );
 	if( transd_array == NULL ) {
@@ -352,9 +352,107 @@ void setup () {
 	#ifdef DEBUG_TIMER
 	debug_timer ();
 	#endif
+	
+//	TIMSK0 = 0; //The Timer0 causes glitches on the output wave from the interrupts, but its needed for the Serial communication 
+	TIMSK1 = 0; 
+	TIMSK2 = 0; 
+	TIMSK3 = 0; 
+	TIMSK4 = 0; 
+	TIMSK5 = 0;
+	
 } //setup
 
 void loop () {
+	
+	LOOP:
+
+	/*
+	 * This section is very critical. The instructions were carefully chosen to match a
+	 * number of cycles. 
+	 * The constraints are (1) generate a 320kHz update rate of the output (maximum of 
+	 * 160kHz for a square wave). With a clock of 16MHz (t=0,0625us) it can execute only 
+	 * 50 cycles without extrapolate the t=3,125us period for the 320kHz update rate. Also,
+	 * (2) the wave can't have too much ripple. The assembly code leads to two branches, so
+	 * both branches must take 50 cycles to complete. Finally (3) the device must accept 
+	 * input serial data, so the assembly code must eventually check if there are data in
+	 * the serial input buffer.
+	 * 
+	 * This code will output a complete period of the 40kHz wave (8 updates at 320kHz) in
+	 * a loop then end the routine. 
+	 * The loop is controlled by r17 which is decremented to zero, breaking the loop. As 
+	 * the loop is a smaller path, it has nops for padding, to use exactly 50 cycles.
+	 * After the loop is broken, it checks if there are data in the serial input buffer.
+	 * If there are no input data, the program jumps to the LOOP label and reaching the
+	 * assembly code again. Its very important that the asm reloads the inputs as the 
+	 * [vecAddr] must be reseted and the [rx_h] and [rx_t] can be outdated. This path also
+	 * have 50 cycles (when there's no input data). If there was input data, the output
+	 * will be halted to interpret the serial input.
+	 *
+	 * Why use the LOOP label inside the loop()? The Arduino core inserts a call to a 
+	 * function at the start of the loop() function, that violates the 50 cycles constraint.
+	 *
+	 * Also the Timer0 adds glitches to the output (increases the delay when the interrupt
+	 * occurs). But as the Timer0 is used by the Serial library, it must be activated.
+	 * 
+	 * To perform a very fast check if there's input serial data, the Arduino core library
+	 * must be modified. The modification is to place the variables 
+	 * "volatile rx_buffer_index_t _rx_buffer_head = 0;" and 
+	 * "volatile rx_buffer_index_t _rx_buffer_tail = 0;" in the public section of the 
+	 * HardwareSerial.h header. Note that the compiling process may make a copy of the
+	 * core files, so check if this modification is done in the cached files also.
+	 *
+	 * The avr-objdump command can be used to verify the generated assembly code with
+	 * the command "avr-objdump -D -S -l -z src.ino.elf > disassembly.asm".
+	 */
+	asm volatile goto ( 
+			
+		"ldi	r17,			%[ph_res]		\n" //load array_phase_idx
+		"rjmp	2f								\n" //jumps the nops
+			
+		"1:										\n" //loop to output an entire period
+		
+		"nop\n""nop\n""nop\n""nop\n""nop\n"//adjust timing
+		"nop\n""nop\n""nop\n""nop\n""nop\n"//adjust timing
+		"nop\n""nop\n""nop\n"//adjust timing
+
+		"2:										\n" //
+
+		//The vecAddr is incremented. Its possible because of the order of the buffer vector dimensions
+		"ld		r16,			%a[vecAddr]+	\n" //PORTA
+		"out	0x02,			r16				\n" //PORTA (to G the ports can be addressed directly)
+		"ld		r16,			%a[vecAddr]+	\n" //PORTB
+		"out	0x05,			r16				\n" //PORTB
+		"ld		r16,			%a[vecAddr]+	\n" //PORTC
+		"out	0x08,			r16				\n" //PORTC
+		"ld		r16,			%a[vecAddr]+	\n" //PORTD
+		"out	0x0B,			r16				\n" //PORTD
+		"ld		r16,			%a[vecAddr]+	\n" //PORTF
+		"out	0x11,			r16				\n" //PORTF
+		"ld		r16,			%a[vecAddr]+	\n" //PORTG
+		"out	0x14,			r16				\n" //PORTG
+		"ld		r16,			%a[vecAddr]+	\n" //PORTH (from H the ports must be addressed by the data space)
+		"sts	0x102,			r16				\n" //PORTH
+		"ld		r16,			%a[vecAddr]+	\n" //PORTJ
+		"sts	0x105,			r16				\n" //PORTJ
+		"ld		r16,			%a[vecAddr]+	\n" //PORTK
+		"sts	0x108,			r16				\n" //PORTK
+		"ld		r16,			%a[vecAddr]+	\n" //PORTL
+		"sts	0x10B,			r16				\n" //PORTL
+
+		"dec	r17								\n" //decrement array_phase_idx
+		"brne	1b								\n" //until the counter reach zero, loop to output an entire period
+		
+		"cp		%[rx_h],		%[rx_t]			\n" //checks if there is input serial data
+		"breq	%l[LOOP]						\n" //if theres no data, skips the input parsing
+		
+		: 
+		: [vecAddr] "e" (port_buffer_step_addr) //e = pointer registers (x, y ,z)
+		, [rx_h] "r" (Serial._rx_buffer_head) //r = general registers (r0 - r31)
+		, [rx_t] "r" (Serial._rx_buffer_tail) //r = general registers (r0 - r31)
+		, [ph_res] "M" (ARRAY_PHASERES) //M = integer constant
+		: "memory"//"r16", "r17" //The gcc wasn't reloading the [vecAddr] registers between calls before using "memory" in the cobbler list
+		: LOOP
+	); 
 	
 	//it accepts serial data even when the output is active, but the parsing and executing of the commands will be slower as the timer 4 will generate a lot of interrupts.
 	//it's recommended to send a "i" command before sending commands while the output is active;
@@ -366,86 +464,8 @@ void loop () {
 		input_execute(); //execute the parsed parameters
 	}
 
-///*
-	asm volatile (
-
-//	"mov	r17,			%A[vecAddr]		\n"
-//	"mov	r18,			%B[vecAddr]		\n"
-//	
-//	"1:								\n" //loads 10
-//	"mov	%A[vecAddr],	r17				\n"
-//	"mov	%B[vecAddr],	r18				\n"
-
-	"mul	%[phIdx],		%[C10]			\n" //array_phase_idx * 10 (into r0, r1)
-	"add	%A[vecAddr],	r0				\n" //address = &traj_port_buffer[traj_step_idx][array_phase_idx][0] (&traj_port_buffer[traj_step_idx] + array_phase_idx * 10)
-	"adc	%B[vecAddr],	r1				\n" 
-
-	"ld		r16,			%a[vecAddr]+	\n" //PORTA
-	"out	0x02,			r16				\n" //PORTA
-	"ld		r16,			%a[vecAddr]+	\n" //PORTB
-	"out	0x05,			r16				\n" //PORTB
-	"ld		r16,			%a[vecAddr]+	\n" //PORTC
-	"out	0x08,			r16				\n" //PORTC
-	"ld		r16,			%a[vecAddr]+	\n" //PORTD
-	"out	0x0B,			r16				\n" //PORTD
-	"ld		r16,			%a[vecAddr]+	\n" //PORTF
-	"out	0x11,			r16				\n" //PORTF
-	"ld		r16,			%a[vecAddr]+	\n" //PORTG
-	"out	0x14,			r16				\n" //PORTG
-	"ld		r16,			%a[vecAddr]+	\n" //PORTH
-	"sts	0x102,			r16				\n" //PORTH
-	"ld		r16,			%a[vecAddr]+	\n" //PORTJ
-	"sts	0x105,			r16				\n" //PORTJ
-	"ld		r16,			%a[vecAddr]+	\n" //PORTK
-	"sts	0x109,			r16				\n" //PORTK
-	"ld		r16,			%a[vecAddr]+	\n" //PORTL
-	"sts	0x10B,			r16				\n" //PORTL
-
-	"subi	%[phIdx],		-1				\n" //increment array_phase_idx
-	"andi	%[phIdx],		0x07			\n" //masks only the frist 3 bits, to wrap the count from 0 to 7
-	//"sts	(array_phase_idx),	r23	\n"
-	
-//	"jmp	1b	\n"
-	
-	: [phIdx] "+&d" (array_phase_idx) //2 cycles lds + 2 cycles sts //d = upper registers (r16 - r31)
-	: [vecAddr] "e" (port_buffer_step_addr) //2 cycles? //e = pointer registers (x, y ,z)
-	 ,[C10] "r" (10) //1 cycle ldi
-	: "r16", "r0", "r1"
-); 
-//*/
-
-
-
-
-/*
-	//buffer the indexes to optimize access as they're volatile
-	uint8_t phase_idx = array_phase_idx;
-	uint8_t step_idx = traj_step_idx;
-  
-	// Just copy the port state from the buffer
-	PORTA = traj_port_buffer[step_idx][phase_idx][0];
-	PORTB = traj_port_buffer[step_idx][phase_idx][1];
-	PORTC = traj_port_buffer[step_idx][phase_idx][2];
-	PORTD = traj_port_buffer[step_idx][phase_idx][3];
-	//PORTE = 0;
-	PORTF = traj_port_buffer[step_idx][phase_idx][4];
-	PORTG = traj_port_buffer[step_idx][phase_idx][5];
-	PORTH = traj_port_buffer[step_idx][phase_idx][6];
-	//PORTI = 0;
-	PORTJ = traj_port_buffer[step_idx][phase_idx][7];
-	PORTK = traj_port_buffer[step_idx][phase_idx][8];
-	PORTL = traj_port_buffer[step_idx][phase_idx][9];
-	
-	array_phase_idx++;
-	array_phase_idx &= 0x07;
-
-//	if( array_phase_idx < ARRAY_PHASERES ) { //increments the current phase index. It will cycle between 0 and (ARRAY_PHASERES - 1)
-//		array_phase_idx++;
-//	}
-//	else {
-//		array_phase_idx = 0; 
-//	}
-*/
+	goto LOOP;
+		
 } //loop
 
 /**
@@ -453,103 +473,8 @@ void loop () {
  * It will update the port registers by cycle trough the buffered port registers for each step of the wave (one period is divided in many slices to allow phase control).
  * The active/inactive control is made by enabling or disabling the timer interrupts.
  */
-ISR( TIMER4_COMPA_vect ) {
-/*
-asm volatile (
+/*ISR( TIMER4_COMPA_vect ) {
 
-	//"lds	X,	(port_buffer_step_addr)	\n"
-	//"lds	r23,	(array_phase_idx)	\n"
-	//"ldi	r16,			%[C10]			\n" //loads 10
-	"mul	%[phIdx],		%[C10]			\n" //array_phase_idx * 10 (into r0, r1)
-	"add	%A[vecAddr],	r0				\n" //address = &traj_port_buffer[traj_step_idx][array_phase_idx][0] (&traj_port_buffer[traj_step_idx] + array_phase_idx * 10)
-	"adc	%B[vecAddr],	r1				\n" 
-
-	//9 cycles
-
-	"ld		r16,			%a[vecAddr]+	\n" //PORTA
-	"out	0x02,			r16				\n" //PORTA
-	"ld		r16,			%a[vecAddr]+	\n" //PORTB
-	"out	0x05,			r16				\n" //PORTB
-	"ld		r16,			%a[vecAddr]+	\n" //PORTC
-	"out	0x08,			r16				\n" //PORTC
-	"ld		r16,			%a[vecAddr]+	\n" //PORTD
-	"out	0x0B,			r16				\n" //PORTD
-	"ld		r16,			%a[vecAddr]+	\n" //PORTF
-	"out	0x11,			r16				\n" //PORTF
-	"ld		r16,			%a[vecAddr]+	\n" //PORTG
-	"out	0x14,			r16				\n" //PORTG
-	"ld		r16,			%a[vecAddr]+	\n" //PORTH
-	"sts	0x102,			r16				\n" //PORTH
-	"ld		r16,			%a[vecAddr]+	\n" //PORTJ
-	"sts	0x105,			r16				\n" //PORTJ
-	"ld		r16,			%a[vecAddr]+	\n" //PORTK
-	"sts	0x109,			r16				\n" //PORTK
-	"ld		r16,			%a[vecAddr]+	\n" //PORTL
-	"sts	0x10B,			r16				\n" //PORTL
-
-	//9 + 34 cycles
-
-	"subi	%[phIdx],		-1				\n" //increment array_phase_idx
-	"andi	%[phIdx],		0x09			\n" //masks only the frist 3 bits, to wrap the count from 0 to 7
-	//"sts	(array_phase_idx),	r23	\n"
-	
-	//9 + 34 + 4
-	
-	//47 cycles?
-	
-	: [phIdx] "+&d" (array_phase_idx) //2 cycles lds + 2 cycles sts //d = upper registers (r16 - r31)
-	: [vecAddr] "e" (port_buffer_step_addr) //2 cycles? //e = pointer registers (x, y ,z)
-	 ,[C10] "M" (10) //1 cycle ldi
-	: "r16", "r0", "r1"
-); */
-/*
-	//"lds	X,	(port_buffer_step_addr)	\n"
-	//"lds	r23,	(array_phase_idx)	\n"
-	//"ldi	r16,	0	\n"
-	"add	%A[vecAddr],	%[phIdx]	\n" //address = &traj_port_buffer[traj_step_idx][array_phase_idx][0]
-	"adc	%B[vecAddr],	r16			\n" 
-
-	"subi	%[phIdx],	-10	\n"
-	"cpi	%[phIdx],	80	\n" //00 - 70
-	"brne	1f				\n" 
-	"ldi	%[phIdx],	0	\n" //reset	
-	"1:						\n"
-*/
-
-
-
-//	uint8_t *ptr;
-//	ptr = &traj_port_buffer[traj_step_idx][array_phase_idx][0];
-//  PORTA = *ptr; ptr++;
-//  PORTB = *ptr; ptr++;
-//  PORTC = *ptr; ptr++;
-//  PORTD = *ptr; ptr++;
-//  PORTF = *ptr; ptr++;
-//  PORTG = *ptr; ptr++;
-//  PORTH = *ptr; ptr++;
-//  PORTJ = *ptr; ptr++;
-//  PORTK = *ptr; ptr++;
-//  PORTL = *ptr; //ptr++;
-/*
-  asm("
-    //lds r20, traj_step_idx
-    //lds r21, array_phase_idx
-    //ponteiro buffer
-    //lds X, &traj_port_buffer;
-    //copia do buffer pra porta
-    lds 0x02, X PORTA
-    inc X
-    ..
-
-    //atualiza phaseidx
-    lds r21, array_phase_idx //carrega
-    inc r21 //incrementa
-    ori r21, 0x09 //loop 0-9 reseta bit 4
-    sts array_phase_idx, r21
-    ..
-    " : "x" (&traj_port_buffer[traj_step_idx][array_phase_idx][0]) : "" : "r21");
-*/
-/*
 	//buffer the indexes to optimize access as they're volatile
 	uint8_t phase_idx = array_phase_idx;
 	uint8_t step_idx = traj_step_idx;
@@ -567,39 +492,17 @@ asm volatile (
 	PORTJ = traj_port_buffer[step_idx][phase_idx][7];
 	PORTK = traj_port_buffer[step_idx][phase_idx][8];
 	PORTL = traj_port_buffer[step_idx][phase_idx][9];
-	*/
 	
   //if( phase_idx < ARRAY_PHASERES ) { //increments the current phase index. It will cycle between 0 and (ARRAY_PHASERES - 1)
-//	if( array_phase_idx < ARRAY_PHASERES ) { //increments the current phase index. It will cycle between 0 and (ARRAY_PHASERES - 1)
-//		array_phase_idx++;
-//	}
-//	else {
-//		array_phase_idx = 0; 
-//	}
-//array_phase_idx++;
-//array_phase_idx &= 0x09;
+	if( array_phase_idx < ARRAY_PHASERES ) { //increments the current phase index. It will cycle between 0 and (ARRAY_PHASERES - 1)
+		array_phase_idx++;
+	}
+	else {
+		array_phase_idx = 0; 
+	}
 
-	//array_phase_idx = (array_phase_idx + 1) & 0x09;
-
-
- /*
-0000
-0001
-0010
-0011
-0100
-0101
-0110
-0111
-se for 8 bits, pode só incrementar a apagar o bit da esquerda
-1000
-1001
-
-1010
-1011
-
-*/
 } //ISR T4
+*/
 
 /**
  * This function will be called every interrupt of timer 3.
@@ -624,7 +527,8 @@ ISR( TIMER3_COMPA_vect ) {
 		#endif
 
 		if(mode == MODE_MOVE_OFF) { // disables the output if the mode demands it
-			disableTimer4 ();
+			//disableTimer4 ();
+			clear_buffer ();
 			output_reset ();
 		}
 	}
@@ -981,7 +885,8 @@ void input_execute (){
 					traj_ctrl.lastz = traj_ctrl.z;
 					
 					disableTimer3 ();
-					disableTimer4 ();
+					//disableTimer4 ();
+					clear_buffer ();
 					output_reset ();
 				}
 				else { //if a MODE_MOVE_ON mode is activated but the origin and destiny are the same point, calculates the output for the destiny and turns the output on. It's equivalent to a MODE_ON command
@@ -997,7 +902,7 @@ void input_execute (){
 					traj_ctrl.lastz = traj_ctrl.z;
 					
 					disableTimer3 ();
-					enableTimer4 ();
+					//enableTimer4 ();
 				}
 			}
 		else { /* movement */
@@ -1015,7 +920,7 @@ void input_execute (){
 			traj_ctrl.lasty = traj_ctrl.y;
 			traj_ctrl.lastz = traj_ctrl.z;
 			
-			enableTimer4 (); //enables the output and the movement
+			//enableTimer4 (); //enables the output and the movement
 			enableTimer3 ();
 		}
 	}
@@ -1034,7 +939,7 @@ void input_execute (){
 		
 		
 		disableTimer3 (); //no movement required
-		enableTimer4 ();
+		//enableTimer4 ();
 	}
 	else if(mode == MODE_FLAT) {
 		
@@ -1053,12 +958,13 @@ void input_execute (){
 		traj_ctrl.lastz = traj_ctrl.z;
 		
 		disableTimer3 (); //no movement required
-		enableTimer4 ();
+		//enableTimer4 ();
 	}
 	else if(mode == MODE_OFF) {
 		
 		disableTimer3 (); //disables the output and the movement
-		disableTimer4 ();
+		//disableTimer4 ();
+		clear_buffer ();
 		output_reset ();
 	}
 	
@@ -1100,7 +1006,24 @@ void output_reset () {
 	PORTJ = 0;
 	PORTK = 0;
 	PORTL = 0;
-}
+} //output_reset
+
+/**
+ * Clear the output buffer
+ * Use to "deactivate" the array
+ */
+void clear_buffer () {
+	uint8_t step_idx, phase_idx, port_idx;
+
+	for(step_idx = 0; step_idx < TRAJ_MAXSTEPS; step_idx++){
+		for(phase_idx = 0; phase_idx < ARRAY_PHASERES; phase_idx++){
+			for(port_idx = 0; port_idx < 10; port_idx++){
+			
+				traj_port_buffer[step_idx][phase_idx][port_idx] = 0x00;
+			}
+		}
+	}
+} //clear_buffer
 
 #ifdef DEBUG_PINS
 /**
@@ -1393,6 +1316,7 @@ void debug_timer () {
 				//updates only the current pin
 				if(bit) {
 					traj_port_buffer[0][phase_idx][port_idx] |= PINS[pin].bit_msk;
+					
 				}
 			}
 		}
@@ -1405,14 +1329,70 @@ void debug_timer () {
 	mode = MODE_ON;
 	//enableTimer4();
 	
-	Serial.println(traj_port_buffer[0][0][0]);
-	Serial.println(traj_port_buffer[0][1][0]);
-	Serial.println(traj_port_buffer[0][2][0]);
-	Serial.println(traj_port_buffer[0][3][0]);
-	Serial.println(traj_port_buffer[0][4][0]);
-	Serial.println(traj_port_buffer[0][5][0]);
-	Serial.println(traj_port_buffer[0][6][0]);
-	Serial.println(traj_port_buffer[0][7][0]);
+//	Serial.println(traj_port_buffer[0][0][0]);
+//	Serial.println(traj_port_buffer[0][1][0]);
+//	Serial.println(traj_port_buffer[0][2][0]);
+//	Serial.println(traj_port_buffer[0][3][0]);
+//	Serial.println(traj_port_buffer[0][4][0]);
+//	Serial.println(traj_port_buffer[0][5][0]);
+//	Serial.println(traj_port_buffer[0][6][0]);
+//	Serial.println(traj_port_buffer[0][7][0]);
+//	Serial.println(traj_port_buffer[0][0][1]);
+//	Serial.println(traj_port_buffer[0][1][1]);
+//	Serial.println(traj_port_buffer[0][2][1]);
+//	Serial.println(traj_port_buffer[0][3][1]);
+//	Serial.println(traj_port_buffer[0][4][1]);
+//	Serial.println(traj_port_buffer[0][5][1]);
+//	Serial.println(traj_port_buffer[0][6][1]);
+//	Serial.println(traj_port_buffer[0][7][1]);
+//	Serial.println(traj_port_buffer[0][0][2]);
+//	Serial.println(traj_port_buffer[0][1][2]);
+//	Serial.println(traj_port_buffer[0][2][2]);
+//	Serial.println(traj_port_buffer[0][3][2]);
+//	Serial.println(traj_port_buffer[0][4][2]);
+//	Serial.println(traj_port_buffer[0][5][2]);
+//	Serial.println(traj_port_buffer[0][6][2]);
+//	Serial.println(traj_port_buffer[0][7][2]);
+//	Serial.println(traj_port_buffer[0][0][3]);
+//	Serial.println(traj_port_buffer[0][1][3]);
+//	Serial.println(traj_port_buffer[0][2][3]);
+//	Serial.println(traj_port_buffer[0][3][3]);
+//	Serial.println(traj_port_buffer[0][4][3]);
+//	Serial.println(traj_port_buffer[0][5][3]);
+//	Serial.println(traj_port_buffer[0][6][3]);
+//	Serial.println(traj_port_buffer[0][7][3]);
+//	Serial.println(traj_port_buffer[0][0][4]);
+//	Serial.println(traj_port_buffer[0][1][4]);
+//	Serial.println(traj_port_buffer[0][2][4]);
+//	Serial.println(traj_port_buffer[0][3][4]);
+//	Serial.println(traj_port_buffer[0][4][4]);
+//	Serial.println(traj_port_buffer[0][5][4]);
+//	Serial.println(traj_port_buffer[0][6][4]);
+//	Serial.println(traj_port_buffer[0][7][4]);
+//	Serial.println(traj_port_buffer[0][0][5]);
+//	Serial.println(traj_port_buffer[0][1][5]);
+//	Serial.println(traj_port_buffer[0][2][5]);
+//	Serial.println(traj_port_buffer[0][3][5]);
+//	Serial.println(traj_port_buffer[0][4][5]);
+//	Serial.println(traj_port_buffer[0][5][5]);
+//	Serial.println(traj_port_buffer[0][6][5]);
+//	Serial.println(traj_port_buffer[0][7][5]);
+//	Serial.println(traj_port_buffer[0][0][6]);
+//	Serial.println(traj_port_buffer[0][1][6]);
+//	Serial.println(traj_port_buffer[0][2][6]);
+//	Serial.println(traj_port_buffer[0][3][6]);
+//	Serial.println(traj_port_buffer[0][4][6]);
+//	Serial.println(traj_port_buffer[0][5][6]);
+//	Serial.println(traj_port_buffer[0][6][6]);
+//	Serial.println(traj_port_buffer[0][7][6]);
+//	Serial.println(traj_port_buffer[0][0][7]);
+//	Serial.println(traj_port_buffer[0][1][7]);
+//	Serial.println(traj_port_buffer[0][2][7]);
+//	Serial.println(traj_port_buffer[0][3][7]);
+//	Serial.println(traj_port_buffer[0][4][7]);
+//	Serial.println(traj_port_buffer[0][5][7]);
+//	Serial.println(traj_port_buffer[0][6][7]);
+//	Serial.println(traj_port_buffer[0][7][7]);
 	Serial.println(F("Output signal is set up..."));
 } //debug_timer
 #endif

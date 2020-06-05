@@ -14,7 +14,7 @@
 
 /* CONSTANTS */
 #define TRANS_DIAMETER 16 //diameter of the element in millimeters (total length of the array cant exceed 255 millimeters)
-#define TRANS_SEPARATION 2 //distance between two consecutive elements in the array in millimeters (total length of the array cant exceed 255 millimeters)
+#define TRANS_SEPARATION 1 //distance between two consecutive elements in the array in millimeters (total length of the array cant exceed 255 millimeters)
 #define ARRAY_SIZE_X 8 //number of transducers of the array in the x dimension
 #define ARRAY_SIZE_Y 8 //number of transducers of the array in the y dimension
 #define ARRAY_PHASERES 8 //number of "slices" or "steps" that a period is divided into. It defines the resolution of the phase control (max 16 bits)

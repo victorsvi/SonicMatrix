@@ -546,7 +546,7 @@ uint16_t transd_getPattern( /*const uint8_t phase_res,*/ const uint8_t phase, co
 		30% -> _______###
 		50% -> _____#####
 	*/
-	bits_duty = (((duty * 100) / 255) / ARRAY_PHASERES); //equation for duty domain [0,255]
+	bits_duty = ((duty * ARRAY_PHASERES) / 255); //equation for duty domain [0,255]
 	//the odrer of the operations is important to avoid truncate or overflow
 
 	/*
