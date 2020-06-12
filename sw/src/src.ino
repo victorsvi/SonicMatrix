@@ -78,7 +78,7 @@
 #define DEBUG_INPUT //Use to debug the serial input parsing. Will echo the interpretation of the inputed string
 //#define DEBUG_PATTERN //Use to debug the pattern generation routine. Will serial out the pattern for each transducer of the matrix when the pattern is calculated.
 //#define DEBUG_TRAJ //Use to debug the trajectory planning routine. Will serial out the trajectory way points and the speed calculation data.
-#define DEBUG_TIMER 0x00AA //Use to debug the transducer signal generation (waveform, frequency accuracy, jitter). Will configure the matrix to output the defined pattern on all transducers. Note that the pattern generation will be overridden and the phase compensation will be disabled. The value defined is a binary unsigned representing the pattern to be outputted (0xAAAA = #_#_#_#_#_#_#_#_)
+#define DEBUG_TIMER 0x000F //Use to debug the transducer signal generation (waveform, frequency accuracy, jitter). Will configure the matrix to output the defined pattern on all transducers. Note that the pattern generation will be overridden and the phase compensation will be disabled. The value defined is a binary unsigned representing the pattern to be outputted (0xAAAA = #_#_#_#_#_#_#_#_)
 
 #define TRAJ_RES 1 //trajectory maximum resolution in millimeters (not fully implemented)
 #define TRAJ_MAXSTEPS 85 //maximum steps of the trajectory (max 255). 
@@ -149,80 +149,74 @@ struct s_pin { // represents a pin mask
 
 /* GLOBAL VARIABLES */
 
-const uint8_t ARRAY_CALIBRATION[ARRAY_SIZE_X][ARRAY_SIZE_Y][2] PROGMEM = { // maps the pin of each transducer of the matrix (Arduino pin) and it's phase compensation value
+const uint8_t ARRAY_CALIBRATION[ARRAY_SIZE_X][ARRAY_SIZE_Y][2] PROGMEM = { // maps the pin of each transducer of the matrix (Arduino pin) and it's phase compensation value. Doesn't use pins from the bank E to use only 10 banks for performance reasons
 	//pin number (Arduino convention), phase compensation ([0,255] = [0°,360°])
 	//x0, y0,
 	//x0, y1,
-	//0 , 0,
-	//1 , 0,
-	//2 , 0,
-	//3 , 0,
-	//4 , 0,
-	//5 , 0, //this matrix uses pins from 6 to 69 (optimized to use the least banks possible)
-	6 , 0,
-	7 , 0,
-	8 , 0,
-	9 , 0,
-	10, 0,
-	11, 0,
-	12, 0,
-	13, 0,
-	14, 0,
-	15, 0,
-	16, 0,
-	17, 0,
-	18, 0,
-	19, 0,
-	20, 0,
-	21, 0,
-	22, 0,
-	23, 0,
-	24, 0,
-	25, 0,
-	26, 0,
-	27, 0,
-	28, 0,
-	29, 0,
-	30, 0,
-	31, 0,
-	32, 0,
-	33, 0,
-	34, 0,
-	35, 0,
-	36, 0,
-	37, 0,
-	38, 0,
-	39, 0,
-	40, 0,
-	41, 0,
-	42, 0,
-	43, 0,
-	44, 0,
-	45, 0,
-	46, 0,
-	47, 0,
-	48, 0,
-	49, 0,
-	50, 0,
-	51, 0,
-	52, 0,
-	53, 0,
-	54, 0,
-	55, 0,
-	56, 0,
-	57, 0,
-	58, 0,
-	59, 0,
-	60, 0,
-	61, 0,
-	62, 0,
-	63, 0,
-	64, 0,
-	65, 0,
-	66, 0,
-	67, 0,
-	68, 0,
-	69, 0
+	27,	0,	 //x1 y1
+	25,	0,	 //x1 y2
+	21,	0,	 //x1 y3
+	19,	0,	 //x1 y4
+	17,	0,	 //x1 y5
+	14,	0,	 //x1 y6
+	15,	0,	 //x1 y7
+	8,	0,	 //x1 y8
+	29,	0,	 //x2 y1
+	23,	0,	 //x2 y2
+	20,	0,	 //x2 y3
+	18,	0,	 //x2 y4
+	16,	0,	 //x2 y5
+	7,	0,	 //x2 y6
+	6,	0,	 //x2 y7
+	9,	0,	 //x2 y8
+	31,	0,	 //x3 y1
+	37,	0,	 //x3 y2
+	26,	0,	 //x3 y3
+	28,	0,	 //x3 y4
+	30,	0,	 //x3 y5
+	32,	0,	 //x3 y6
+	13,	0,	 //x3 y7
+	12,	0,	 //x3 y8
+	33,	0,	 //x4 y1
+	35,	0,	 //x4 y2
+	42,	0,	 //x4 y3
+	44,	0,	 //x4 y4
+	38,	0,	 //x4 y5
+	40,	0,	 //x4 y6
+	11,	0,	 //x4 y7
+	10,	0,	 //x4 y8
+	39,	0,	 //x5 y1
+	49,	0,	 //x5 y2
+	48,	0,	 //x5 y3
+	46,	0,	 //x5 y4
+	52,	0,	 //x5 y5
+	50,	0,	 //x5 y6
+	22,	0,	 //x5 y7
+	24,	0,	 //x5 y8
+	41,	0,	 //x6 y1
+	47,	0,	 //x6 y2
+	64,	0,	 //x6 y3
+	65,	0,	 //x6 y4
+	55,	0,	 //x6 y5
+	54,	0,	 //x6 y6
+	34,	0,	 //x6 y7
+	36,	0,	 //x6 y8
+	43,	0,	 //x7 y1
+	53,	0,	 //x7 y2
+	66,	0,	 //x7 y3
+	67,	0,	 //x7 y4
+	57,	0,	 //x7 y5
+	56,	0,	 //x7 y6
+	4,	0,	 //x7 y7
+	61,	0,	 //x7 y8
+	45,	0,	 //x8 y1
+	51,	0,	 //x8 y2
+	68,	0,	 //x8 y3
+	69,	0,	 //x8 y4
+	59,	0,	 //x8 y5
+	58,	0,	 //x8 y6
+	62,	0,	 //x8 y7
+	63,	0,	 //x8 y8
 };
 
 const struct s_pin PINS[70] = { // Port bank and bit mask for each Arduino Mega pin indexed by pin number
@@ -353,7 +347,10 @@ void setup () {
 	debug_timer ();
 	#endif
 	
-//	TIMSK0 = 0; //The Timer0 causes glitches on the output wave from the interrupts, but its needed for the Serial communication 
+	
+	#ifdef DEBUG_TIMER
+	TIMSK0 = 0; //The Timer0 causes glitches on the output wave from the interrupts, but its needed for the Serial communication. Disable only when debugging the timer
+	#endif
 	TIMSK1 = 0; 
 	TIMSK2 = 0; 
 	TIMSK3 = 0; 
@@ -419,7 +416,7 @@ void loop () {
 
 		//The vecAddr is incremented. Its possible because of the order of the buffer vector dimensions
 		"ld		r16,			%a[vecAddr]+	\n" //PORTA
-		"out	0x02,			r16				\n" //PORTA (to G the ports can be addressed directly)
+		"out	0x02,			r16				\n" //PORTA (until G the ports can be addressed directly)
 		"ld		r16,			%a[vecAddr]+	\n" //PORTB
 		"out	0x05,			r16				\n" //PORTB
 		"ld		r16,			%a[vecAddr]+	\n" //PORTC
@@ -430,7 +427,7 @@ void loop () {
 		"out	0x11,			r16				\n" //PORTF
 		"ld		r16,			%a[vecAddr]+	\n" //PORTG
 		"out	0x14,			r16				\n" //PORTG
-		"ld		r16,			%a[vecAddr]+	\n" //PORTH (from H the ports must be addressed by the data space)
+		"ld		r16,			%a[vecAddr]+	\n" //PORTH (starting from H the ports must be addressed by the data space)
 		"sts	0x102,			r16				\n" //PORTH
 		"ld		r16,			%a[vecAddr]+	\n" //PORTJ
 		"sts	0x105,			r16				\n" //PORTJ

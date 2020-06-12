@@ -8,7 +8,7 @@
 </settings>
 <grid distance="10" unitdist="mil" unit="mil" style="lines" multiple="1" display="yes" altdistance="0.5" altunitdist="mil" altunit="mil"/>
 <layers>
-<layer number="1" name="Top" color="4" fill="1" visible="yes" active="yes"/>
+<layer number="1" name="Top" color="4" fill="1" visible="no" active="yes"/>
 <layer number="2" name="Route2" color="16" fill="1" visible="no" active="no"/>
 <layer number="3" name="Route3" color="17" fill="1" visible="no" active="no"/>
 <layer number="4" name="Route4" color="18" fill="1" visible="no" active="no"/>
@@ -24,12 +24,12 @@
 <layer number="14" name="Route14" color="22" fill="1" visible="no" active="no"/>
 <layer number="15" name="Route15" color="23" fill="1" visible="no" active="no"/>
 <layer number="16" name="Bottom" color="1" fill="1" visible="no" active="yes"/>
-<layer number="17" name="Pads" color="2" fill="1" visible="yes" active="yes"/>
+<layer number="17" name="Pads" color="2" fill="1" visible="no" active="yes"/>
 <layer number="18" name="Vias" color="2" fill="1" visible="yes" active="yes"/>
 <layer number="19" name="Unrouted" color="6" fill="1" visible="no" active="yes"/>
 <layer number="20" name="Dimension" color="24" fill="1" visible="no" active="yes"/>
-<layer number="21" name="tPlace" color="7" fill="1" visible="no" active="yes"/>
-<layer number="22" name="bPlace" color="7" fill="1" visible="no" active="yes"/>
+<layer number="21" name="tPlace" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="22" name="bPlace" color="7" fill="1" visible="yes" active="yes"/>
 <layer number="23" name="tOrigins" color="15" fill="1" visible="no" active="yes"/>
 <layer number="24" name="bOrigins" color="15" fill="1" visible="no" active="yes"/>
 <layer number="25" name="tNames" color="7" fill="1" visible="no" active="yes"/>
@@ -38,7 +38,7 @@
 <layer number="28" name="bValues" color="7" fill="1" visible="no" active="yes"/>
 <layer number="29" name="tStop" color="58" fill="1" visible="no" active="yes"/>
 <layer number="30" name="bStop" color="58" fill="1" visible="no" active="yes"/>
-<layer number="31" name="tCream" color="7" fill="4" visible="no" active="yes"/>
+<layer number="31" name="tCream" color="7" fill="4" visible="yes" active="yes"/>
 <layer number="32" name="bCream" color="7" fill="5" visible="no" active="yes"/>
 <layer number="33" name="tFinish" color="6" fill="3" visible="no" active="yes"/>
 <layer number="34" name="bFinish" color="6" fill="6" visible="no" active="yes"/>
@@ -57,8 +57,8 @@
 <layer number="47" name="Measures" color="7" fill="1" visible="no" active="yes"/>
 <layer number="48" name="Document" color="7" fill="1" visible="no" active="yes"/>
 <layer number="49" name="Reference" color="7" fill="1" visible="no" active="yes"/>
-<layer number="51" name="tDocu" color="7" fill="1" visible="no" active="yes"/>
-<layer number="52" name="bDocu" color="7" fill="1" visible="no" active="yes"/>
+<layer number="51" name="tDocu" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="52" name="bDocu" color="7" fill="1" visible="yes" active="yes"/>
 <layer number="88" name="SimResults" color="9" fill="1" visible="no" active="no"/>
 <layer number="89" name="SimProbes" color="9" fill="1" visible="no" active="no"/>
 <layer number="90" name="Modules" color="5" fill="1" visible="no" active="no"/>
@@ -71,12 +71,12 @@
 <layer number="97" name="Info" color="7" fill="1" visible="no" active="no"/>
 <layer number="98" name="Guide" color="6" fill="1" visible="no" active="no"/>
 <layer number="99" name="SpiceOrder" color="5" fill="1" visible="no" active="no"/>
-<layer number="100" name="Alignment" color="7" fill="1" visible="yes" active="yes"/>
-<layer number="101" name="NamesTop" color="7" fill="1" visible="yes" active="yes"/>
-<layer number="102" name="NamesBottom" color="58" fill="1" visible="no" active="yes"/>
-<layer number="103" name="Outline" color="7" fill="1" visible="no" active="yes"/>
+<layer number="100" name="Alignment" color="58" fill="1" visible="yes" active="yes"/>
+<layer number="101" name="NamesTop" color="7" fill="1" visible="no" active="yes"/>
+<layer number="102" name="NamesBottom" color="0" fill="1" visible="no" active="yes"/>
+<layer number="103" name="Outline" color="7" fill="1" visible="yes" active="yes"/>
 <layer number="104" name="tDesc" color="7" fill="1" visible="yes" active="yes"/>
-<layer number="105" name="bDesc" color="7" fill="1" visible="no" active="yes"/>
+<layer number="105" name="bDesc" color="58" fill="1" visible="no" active="yes"/>
 <layer number="106" name="a" color="7" fill="1" visible="no" active="yes"/>
 </layers>
 <board>
@@ -3976,10 +3976,9 @@ design rules under a new name.</description>
 <wire x1="106.426" y1="47.498" x2="108.714" y2="45.41785" width="0.508" layer="1"/>
 <wire x1="108.714" y1="45.41785" x2="108.714" y2="42.8882" width="0.508" layer="1"/>
 <wire x1="108.714" y1="42.8882" x2="115.6922" y2="35.91" width="0.508" layer="1"/>
-<wire x1="122.601" y1="37.41630625" x2="122.601" y2="38.524" width="0.508" layer="1"/>
-<wire x1="122.601" y1="38.524" x2="122.809" y2="38.732" width="0.508" layer="1"/>
-<wire x1="115.6922" y1="35.91" x2="121.09469375" y2="35.91" width="0.508" layer="1"/>
-<wire x1="121.09469375" y1="35.91" x2="122.601" y2="37.41630625" width="0.508" layer="1"/>
+<wire x1="121.09469375" y1="35.91" x2="115.6922" y2="35.91" width="0.508" layer="1"/>
+<wire x1="122.809" y1="38.732" x2="122.809" y2="37.62430625" width="0.508" layer="1"/>
+<wire x1="122.809" y1="37.62430625" x2="121.09469375" y2="35.91" width="0.508" layer="1"/>
 </signal>
 <signal name="PA53">
 <contactref element="SVI7" pad="34"/>
@@ -5822,6 +5821,16 @@ design rules under a new name.</description>
 <approved hash="1,20,fc01fe0ffe0ffc01"/>
 <approved hash="1,20,edf9fff7fff7edf9"/>
 <approved hash="23,1,359062807d152a05"/>
+<approved hash="23,1,bd85d67dd667bd9f"/>
+<approved hash="23,1,bbec58dc45c2a6f2"/>
+<approved hash="23,1,85d122c1247e836e"/>
+<approved hash="23,1,d94be8bbee05dff5"/>
+<approved hash="23,1,8ad2afc2a97d8c6d"/>
+<approved hash="23,1,1a3352c354281cd8"/>
+<approved hash="23,1,050831c82cd01810"/>
+<approved hash="23,1,7e6bbd7bbbf478e4"/>
+<approved hash="23,1,9b9f988f9e6c9d7c"/>
+<approved hash="23,1,a5ca9c329c5da5a5"/>
 </errors>
 </board>
 </drawing>

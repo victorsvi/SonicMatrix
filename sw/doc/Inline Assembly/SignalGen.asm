@@ -2,11 +2,11 @@
 
 LP	RST
 		loop():
-		E:\Documentos\Engenharia de Computação\TCC\SonicMatrix\sw\src/src.ino:465
+		...\SonicMatrix\sw\src/src.ino:465
 	2	    102a:	80 91 9b 18 	lds	r24, 0x189B
-		E:\Documentos\Engenharia de Computação\TCC\SonicMatrix\sw\src/src.ino:466
+		...\SonicMatrix\sw\src/src.ino:466
 	2	    102e:	90 91 9c 18 	lds	r25, 0x189C
-		E:\Documentos\Engenharia de Computação\TCC\SonicMatrix\sw\src/src.ino:469
+		...\SonicMatrix\sw\src/src.ino:469
 	2	    1032:	e0 91 08 02 	lds	r30, 0x0208
 	2	    1036:	f0 91 09 02 	lds	r31, 0x0209
 	1	    103a:	17 e0       	ldi	r17, 0x07	; 7
