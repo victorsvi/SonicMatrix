@@ -74,11 +74,12 @@
 
 /* Toggle these defines to enable debug routines */
 //#define DEBUG_PINS 2000 //Use to debug the pin assignment using the port registers. Will set each pin high (starting  from pin 6) sequentially. The value defined is the delay between pins in microseconds
-//#define DEBUG_MAP 2000 //Use to debug the pin mapping of each element of the matrix. Will set the pin for each transducer high in the matrix order {(0,0),(0,1),(0,2),(1,0),(1,1),(1,2),...}. The value defined is the delay between pins in microseconds
+//#define DEBUG_MAP 10000 //Use to debug the pin mapping of each element of the matrix. Will set the pin for each transducer high in the matrix order {(0,0),(0,1),(0,2),(1,0),(1,1),(1,2),...}. The value defined is the delay between pins in microseconds
 #define DEBUG_INPUT //Use to debug the serial input parsing. Will echo the interpretation of the inputed string
-//#define DEBUG_PATTERN //Use to debug the pattern generation routine. Will serial out the pattern for each transducer of the matrix when the pattern is calculated.
+#define DEBUG_PATTERN //Use to debug the pattern generation routine. Will serial out the pattern for each transducer of the matrix when the pattern is calculated.
 //#define DEBUG_TRAJ //Use to debug the trajectory planning routine. Will serial out the trajectory way points and the speed calculation data.
-#define DEBUG_TIMER 0x000F //Use to debug the transducer signal generation (waveform, frequency accuracy, jitter). Will configure the matrix to output the defined pattern on all transducers. Note that the pattern generation will be overridden and the phase compensation will be disabled. The value defined is a binary unsigned representing the pattern to be outputted (0xAAAA = #_#_#_#_#_#_#_#_)
+//#define DEBUG_TIMER 0x000F //Use to debug the transducer signal generation (waveform, frequency accuracy, jitter). Will configure the matrix to output the defined pattern on all transducers. Note that the pattern generation will be overridden and the phase compensation will be disabled. The value defined is a binary unsigned representing the pattern to be outputted (0xAAAA = #_#_#_#_#_#_#_#_)
+#define DEBUG_PHASE 128//Use to debug the phase compensation in flat mode. Will configure the matrix to the flat mode, considering phase compensation. The value defined is the duty cycle from 0 to 255
 
 #define TRAJ_RES 1 //trajectory maximum resolution in millimeters (not fully implemented)
 #define TRAJ_MAXSTEPS 85 //maximum steps of the trajectory (max 255). 
@@ -120,6 +121,9 @@ void debug_traj_speed (const uint8_t s, const uint8_t from_x, const uint8_t from
 #ifdef DEBUG_TIMER
 void debug_timer ();
 #endif
+#ifdef DEBUG_PHASE
+void debug_phase ();
+#endif
 
 /* DATA DEFINITION */
 
@@ -153,70 +157,70 @@ const uint8_t ARRAY_CALIBRATION[ARRAY_SIZE_X][ARRAY_SIZE_Y][2] PROGMEM = { // ma
 	//pin number (Arduino convention), phase compensation ([0,255] = [0°,360°])
 	//x0, y0,
 	//x0, y1,
-	27,	0,	 //x1 y1
-	25,	0,	 //x1 y2
-	21,	0,	 //x1 y3
-	19,	0,	 //x1 y4
-	17,	0,	 //x1 y5
-	14,	0,	 //x1 y6
-	15,	0,	 //x1 y7
-	8,	0,	 //x1 y8
-	29,	0,	 //x2 y1
-	23,	0,	 //x2 y2
-	20,	0,	 //x2 y3
-	18,	0,	 //x2 y4
-	16,	0,	 //x2 y5
-	7,	0,	 //x2 y6
-	6,	0,	 //x2 y7
-	9,	0,	 //x2 y8
-	31,	0,	 //x3 y1
-	37,	0,	 //x3 y2
-	26,	0,	 //x3 y3
-	28,	0,	 //x3 y4
-	30,	0,	 //x3 y5
-	32,	0,	 //x3 y6
-	13,	0,	 //x3 y7
-	12,	0,	 //x3 y8
-	33,	0,	 //x4 y1
-	35,	0,	 //x4 y2
+	27,	25,	 //x1 y1
+	25,	16,	 //x1 y2
+	21,	33,	 //x1 y3
+	19,	45,	 //x1 y4
+	17,	25,	 //x1 y5
+	14,	45,	 //x1 y6
+	15,	53,	 //x1 y7
+	8,	28,	 //x1 y8
+	29,	33,	 //x2 y1
+	23,	98,	 //x2 y2
+	20,	43,	 //x2 y3
+	18,	57,	 //x2 y4
+	16,	28,	 //x2 y5
+	7,	62,	 //x2 y6
+	6,	25,	 //x2 y7
+	9,	33,	 //x2 y8
+	31,	53,	 //x3 y1
+	37,	66,	 //x3 y2
+	26,	62,	 //x3 y3
+	28,	45,	 //x3 y4
+	30,	66,	 //x3 y5
+	32,	74,	 //x3 y6
+	13,	53,	 //x3 y7
+	12,	33,	 //x3 y8
+	33,	62,	 //x4 y1
+	35,	45,	 //x4 y2
 	42,	0,	 //x4 y3
-	44,	0,	 //x4 y4
-	38,	0,	 //x4 y5
-	40,	0,	 //x4 y6
-	11,	0,	 //x4 y7
-	10,	0,	 //x4 y8
-	39,	0,	 //x5 y1
-	49,	0,	 //x5 y2
-	48,	0,	 //x5 y3
-	46,	0,	 //x5 y4
-	52,	0,	 //x5 y5
-	50,	0,	 //x5 y6
-	22,	0,	 //x5 y7
-	24,	0,	 //x5 y8
-	41,	0,	 //x6 y1
-	47,	0,	 //x6 y2
-	64,	0,	 //x6 y3
-	65,	0,	 //x6 y4
-	55,	0,	 //x6 y5
-	54,	0,	 //x6 y6
-	34,	0,	 //x6 y7
-	36,	0,	 //x6 y8
-	43,	0,	 //x7 y1
-	53,	0,	 //x7 y2
-	66,	0,	 //x7 y3
-	67,	0,	 //x7 y4
-	57,	0,	 //x7 y5
-	56,	0,	 //x7 y6
-	4,	0,	 //x7 y7
-	61,	0,	 //x7 y8
-	45,	0,	 //x8 y1
-	51,	0,	 //x8 y2
-	68,	0,	 //x8 y3
-	69,	0,	 //x8 y4
-	59,	0,	 //x8 y5
-	58,	0,	 //x8 y6
-	62,	0,	 //x8 y7
-	63,	0,	 //x8 y8
+	44,	18,	 //x4 y4
+	38,	45,	 //x4 y5
+	40,	21,	 //x4 y6
+	11,	49,	 //x4 y7
+	10,	25,	 //x4 y8
+	39,	21,	 //x5 y1
+	49,	21,	 //x5 y2
+	48,	25,	 //x5 y3
+	46,	33,	 //x5 y4
+	52,	25,	 //x5 y5
+	50,	66,	 //x5 y6
+	22,	41,	 //x5 y7
+	24,	62,	 //x5 y8
+	41,	4,	 //x6 y1
+	47,	16,	 //x6 y2
+	64,	21,	 //x6 y3
+	65,	33,	 //x6 y4
+	55,	47,	 //x6 y5
+	54,	33,	 //x6 y6
+	34,	53,	 //x6 y7
+	36,	41,	 //x6 y8
+	43,	47,	 //x7 y1
+	53,	78,	 //x7 y2
+	66,	25,	 //x7 y3
+	67,	25,	 //x7 y4
+	57,	57,	 //x7 y5
+	56,	28,	 //x7 y6
+	4,	78,	 //x7 y7
+	61,	30,	 //x7 y8
+	45,	39,	 //x8 y1
+	51,	37,	 //x8 y2
+	68,	21,	 //x8 y3
+	69,	28,	 //x8 y4
+	59,	57,	 //x8 y5
+	58,	47,	 //x8 y6
+	62,	66,	 //x8 y7
+	63,	57,	 //x8 y8
 };
 
 const struct s_pin PINS[70] = { // Port bank and bit mask for each Arduino Mega pin indexed by pin number
@@ -1094,9 +1098,9 @@ void debug_map () {
 			pin = transd_array[x][y].port_pin; //the goal is to use the mapping loaded from ARRAY_CALIBRATION to the transducer array to test if the mapping is correct
 		
 			Serial.print(F("Testing ["));
-			Serial.print(x);
+			Serial.print(x+1);
 			Serial.print(F(","));
-			Serial.print(y);
+			Serial.print(y+1);
 			Serial.print(F("] on pin "));
 			Serial.println(pin);
 			
@@ -1164,9 +1168,9 @@ void debug_pattern () {
 	for(x = 0; x < ARRAY_SIZE_X; x++){
 		for(y = 0; y < ARRAY_SIZE_Y; y++){
 
-			Serial.print(x);
+			Serial.print(x+1);
 			Serial.print(F(";"));
-			Serial.print(y);
+			Serial.print(y+1);
 			Serial.print(F(";"));
 			Serial.print(transd_array[x][y].port_pin);
 			Serial.print(F(";"));
@@ -1392,4 +1396,23 @@ void debug_timer () {
 //	Serial.println(traj_port_buffer[0][7][7]);
 	Serial.println(F("Output signal is set up..."));
 } //debug_timer
+#endif
+
+#ifdef DEBUG_PHASE
+/**
+ * Use to debug the phase compensation using flat mode. 
+ * Will set the flat mode. 
+ * The value defined by DEBUG_PHASE is the duty cycle from 0 to 255.
+ */
+void debug_phase () {
+	
+	Serial.println(F("DEBUG ROUTINE - PHASE"));
+	
+	traj_ctrl.d = DEBUG_PHASE;
+	mode = MODE_FLAT;
+		
+	input_execute ();
+		
+	Serial.println(F("End of routine"));
+} //debug_phase
 #endif
