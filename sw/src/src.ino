@@ -79,7 +79,13 @@
 #define DEBUG_PATTERN //Use to debug the pattern generation routine. Will serial out the pattern for each transducer of the matrix when the pattern is calculated.
 //#define DEBUG_TRAJ //Use to debug the trajectory planning routine. Will serial out the trajectory way points and the speed calculation data.
 //#define DEBUG_TIMER 0x000F //Use to debug the transducer signal generation (waveform, frequency accuracy, jitter). Will configure the matrix to output the defined pattern on all transducers. Note that the pattern generation will be overridden and the phase compensation will be disabled. The value defined is a binary unsigned representing the pattern to be outputted (0xAAAA = #_#_#_#_#_#_#_#_)
-#define DEBUG_PHASE 128//Use to debug the phase compensation in flat mode. Will configure the matrix to the flat mode, considering phase compensation. The value defined is the duty cycle from 0 to 255
+//#define DEBUG_PHASE 128//Use to debug the phase compensation in flat mode. Will configure the matrix to the flat mode, considering phase compensation. The value defined is the duty cycle from 0 to 255
+#define DEBUG_FOCUS // Use to debug the focusing capability. Will set the active mode. The value defined by DEBUG_FOCUS_d, DEBUG_FOCUS_x, DEBUG_FOCUS_y, DEBUG_FOCUS_z will set the focus point
+#define DEBUG_FOCUS_d 128
+#define DEBUG_FOCUS_x 60
+#define DEBUG_FOCUS_y 60
+#define DEBUG_FOCUS_z 50
+
 
 #define TRAJ_RES 1 //trajectory maximum resolution in millimeters (not fully implemented)
 #define TRAJ_MAXSTEPS 85 //maximum steps of the trajectory (max 255). 
@@ -123,6 +129,9 @@ void debug_timer ();
 #endif
 #ifdef DEBUG_PHASE
 void debug_phase ();
+#endif
+#ifdef DEBUG_FOCUS
+void debug_focus ();
 #endif
 
 /* DATA DEFINITION */
@@ -351,8 +360,21 @@ void setup () {
 	debug_timer ();
 	#endif
 	
+	#ifdef DEBUG_PHASE
+	debug_phase ();
+	#endif
+	
+	#ifdef DEBUG_FOCUS
+	debug_focus ();
+	#endif
 	
 	#ifdef DEBUG_TIMER
+	TIMSK0 = 0; //The Timer0 causes glitches on the output wave from the interrupts, but its needed for the Serial communication. Disable only when debugging the timer
+	#endif
+	#ifdef DEBUG_PHASE
+	TIMSK0 = 0; //The Timer0 causes glitches on the output wave from the interrupts, but its needed for the Serial communication. Disable only when debugging the timer
+	#endif
+	#ifdef DEBUG_FOCUS
 	TIMSK0 = 0; //The Timer0 causes glitches on the output wave from the interrupts, but its needed for the Serial communication. Disable only when debugging the timer
 	#endif
 	TIMSK1 = 0; 
@@ -1415,4 +1437,26 @@ void debug_phase () {
 		
 	Serial.println(F("End of routine"));
 } //debug_phase
+#endif
+
+#ifdef DEBUG_FOCUS
+/**
+ * Use to debug the focusing capability. 
+ * Will set the active mode. 
+ * The value defined by DEBUG_FOCUS_d, DEBUG_FOCUS_x, DEBUG_FOCUS_y, DEBUG_FOCUS_z will set the focus point.
+ */
+void debug_focus () {
+	
+	Serial.println(F("DEBUG ROUTINE - FOCUS"));
+	
+	traj_ctrl.d = DEBUG_FOCUS_d;
+	traj_ctrl.x = DEBUG_FOCUS_x;
+	traj_ctrl.y = DEBUG_FOCUS_y;
+	traj_ctrl.z = DEBUG_FOCUS_z;
+	mode = MODE_ON;
+		
+	input_execute ();
+		
+	Serial.println(F("End of routine"));
+} //debug_focus
 #endif
