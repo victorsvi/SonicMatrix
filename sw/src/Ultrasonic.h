@@ -12,6 +12,8 @@
 #include <stdio.h>
 #endif
 
+//#define USE_TWINTRAP 
+
 /* CONSTANTS */
 #define TRANS_DIAMETER 16 //diameter of the element in millimeters (total length of the array cant exceed 255 millimeters)
 #define TRANS_SEPARATION 1 //distance between two consecutive elements in the array in millimeters (total length of the array cant exceed 255 millimeters)

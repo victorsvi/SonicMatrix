@@ -1,4 +1,5 @@
 
+
 /*
 	IMPORTANTE! Calcular o foco em tempo real é muito lento (cerca de 18ms por cálculo)
 	
@@ -76,15 +77,15 @@
 //#define DEBUG_PINS 2000 //Use to debug the pin assignment using the port registers. Will set each pin high (starting  from pin 6) sequentially. The value defined is the delay between pins in microseconds
 //#define DEBUG_MAP 10000 //Use to debug the pin mapping of each element of the matrix. Will set the pin for each transducer high in the matrix order {(0,0),(0,1),(0,2),(1,0),(1,1),(1,2),...}. The value defined is the delay between pins in microseconds
 #define DEBUG_INPUT //Use to debug the serial input parsing. Will echo the interpretation of the inputed string
-#define DEBUG_PATTERN //Use to debug the pattern generation routine. Will serial out the pattern for each transducer of the matrix when the pattern is calculated.
+//#define DEBUG_PATTERN //Use to debug the pattern generation routine. Will serial out the pattern for each transducer of the matrix when the pattern is calculated.
 //#define DEBUG_TRAJ //Use to debug the trajectory planning routine. Will serial out the trajectory way points and the speed calculation data.
 //#define DEBUG_TIMER 0x000F //Use to debug the transducer signal generation (waveform, frequency accuracy, jitter). Will configure the matrix to output the defined pattern on all transducers. Note that the pattern generation will be overridden and the phase compensation will be disabled. The value defined is a binary unsigned representing the pattern to be outputted (0xAAAA = #_#_#_#_#_#_#_#_)
 //#define DEBUG_PHASE 128//Use to debug the phase compensation in flat mode. Will configure the matrix to the flat mode, considering phase compensation. The value defined is the duty cycle from 0 to 255
-#define DEBUG_FOCUS // Use to debug the focusing capability. Will set the active mode. The value defined by DEBUG_FOCUS_d, DEBUG_FOCUS_x, DEBUG_FOCUS_y, DEBUG_FOCUS_z will set the focus point
-#define DEBUG_FOCUS_d 128
-#define DEBUG_FOCUS_x 60
-#define DEBUG_FOCUS_y 60
-#define DEBUG_FOCUS_z 50
+//#define DEBUG_FOCUS // Use to debug the focusing capability. Will set the active mode. The value defined by DEBUG_FOCUS_d, DEBUG_FOCUS_x, DEBUG_FOCUS_y, DEBUG_FOCUS_z will set the focus point
+//#define DEBUG_FOCUS_d 128
+//#define DEBUG_FOCUS_x 60
+//#define DEBUG_FOCUS_y 60
+//#define DEBUG_FOCUS_z 50
 
 
 #define TRAJ_RES 1 //trajectory maximum resolution in millimeters (not fully implemented)
@@ -316,6 +317,8 @@ uint8_t traj_port_buffer[TRAJ_MAXSTEPS][ARRAY_PHASERES][10]; //buffers the ports
 
 volatile uint8_t *port_buffer_step_addr = &traj_port_buffer[0][0][0]; //holds the address for the section of the traj_port_buffer vector for the current traj_step_idx (must be assigned with &traj_port_buffer[traj_step_idx][0][0] when traj_step_idx is changed)
 
+uint8_t TIMSK0_copy;
+
 void setup () {
    	
 	Serial.begin(115200);
@@ -368,6 +371,7 @@ void setup () {
 	debug_focus ();
 	#endif
 	
+	TIMSK0_copy = TIMSK0;
 	#ifdef DEBUG_TIMER
 	TIMSK0 = 0; //The Timer0 causes glitches on the output wave from the interrupts, but its needed for the Serial communication. Disable only when debugging the timer
 	#endif
@@ -377,6 +381,7 @@ void setup () {
 	#ifdef DEBUG_FOCUS
 	TIMSK0 = 0; //The Timer0 causes glitches on the output wave from the interrupts, but its needed for the Serial communication. Disable only when debugging the timer
 	#endif
+	TIMSK0 = 0; //The Timer0 causes glitches on the output wave from the interrupts, but its needed for the Serial communication. Disable only when debugging the timer
 	TIMSK1 = 0; 
 	TIMSK2 = 0; 
 	TIMSK3 = 0; 
@@ -477,6 +482,7 @@ void loop () {
 		: LOOP
 	); 
 	
+	TIMSK0 = TIMSK0_copy; //enable timer0
 	//it accepts serial data even when the output is active, but the parsing and executing of the commands will be slower as the timer 4 will generate a lot of interrupts.
 	//it's recommended to send a "i" command before sending commands while the output is active;
 	if(Serial.available()) { // if there's input data on serial line
@@ -486,6 +492,7 @@ void loop () {
 		#endif
 		input_execute(); //execute the parsed parameters
 	}
+	TIMSK0 = 0; //disable timer0
 
 	goto LOOP;
 		
@@ -687,7 +694,6 @@ void traj_calc_step (uint8_t step_idx, const uint8_t duty_cycle, const uint8_t f
 			
 				//access the pattern and gets the value for the bit representing the current phase index
 				bit = transd_array[x][y].pattern & (1 << phase_idx);
-				
 				//updates only the current pin and port
 				if(bit) {
 					traj_port_buffer[step_idx][phase_idx][port_idx] |= PINS[pin].bit_msk; 
@@ -739,11 +745,17 @@ uint32_t traj_calc_speed (const uint8_t s, const uint8_t from_x, const uint8_t f
 	//distance /= 10;
 	
 	if( from_x != to_x ) { /* if the trajectory isn't perpendicular to the x axis */
-		
+
+		if(Dx < 0) {
+			Dx = -Dx;	
+		}
 		speed_axys = (s * Dx) / distance; //solve the equivalent speed on the indexing axis
 	}
 	else if( from_y != to_y ) { /* if the trajectory is perpendicular to the x axis but isn't perpendicular to the y axis */
 		
+		if(Dy < 0) {
+			Dy = -Dy;	
+		}
 		speed_axys = (s * Dy) / distance; //solve the equivalent speed on the indexing axis
 	}
 	else { /* if the trajectory is perpendicular to the x and y axis */
@@ -1198,12 +1210,14 @@ void debug_pattern () {
 			Serial.print(F(";"));
 			Serial.print(transd_array[x][y].phase_comp);
 			Serial.print(F(";"));
+			Serial.print(transd_array[x][y].pattern);
+			Serial.print(F(";"));
 			//converts the 16 bit pattern to a 16 characters string (not 16, but ARRAY_PHASERES)
 			//the '#' represents a active output and the '_' represents a inactive output
-			for(i = 0; i < ARRAY_PHASERES; i++) {
+			for(i = ARRAY_PHASERES; i >0 ; i--) {
 
 				//creates a mask with the current bit = 1
-				if(transd_array[x][y].pattern & (1 << (i))) { //if the pattern have the current bit = 1
+				if(transd_array[x][y].pattern & MSK(i-1)) { //if the pattern have the current bit = 1
 					Serial.print(F("#")); 
 				}
 				else {

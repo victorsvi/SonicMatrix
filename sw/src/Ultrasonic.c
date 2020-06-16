@@ -234,11 +234,16 @@ uint8_t transd_array_calcfocus( /*t_transd_array *transd_array,*/ const uint8_t 
 	//uint8_t ret;
 	uint8_t x,y;
 	t_transd *transd = NULL;
-	
+	/*
 	uint32_t distance; //type long because it can overflow for some big distances
 	uint8_t phase;
 	int16_t dist_x,dist_y; //may be smaller than zero
-
+	uint8_t t_dist_x; 
+	*/
+	
+	float dist_x, dist_y, dist_z, dist, fphase;
+	uint8_t phase;
+	
 	/*if(transd_array == NULL) {
 		#ifdef DEBUG
 		DEBUG_MSG("The transducer array pointer is null")
@@ -275,12 +280,15 @@ uint8_t transd_array_calcfocus( /*t_transd_array *transd_array,*/ const uint8_t 
 			  0   8  16  18  26 34  36  44 52
 			  ------------------------------->
        */
+			/*
 			dist_x = (TRANS_DIAMETER / 2) + ((TRANS_DIAMETER+TRANS_SEPARATION) * x); //calculates the x position of the center of the transducer on the array
 			dist_y = (TRANS_DIAMETER / 2) + ((TRANS_DIAMETER+TRANS_SEPARATION) * y); //calculates the y position of the center of the transducer on the array
+			t_dist_x = dist_x;
 			#ifdef DEBUG
 			transd_array_debug[x][y].dist_x = dist_x;
 			transd_array_debug[x][y].dist_y = dist_y;
 			#endif
+			*/
 			/*
 				W = S / f (wave length = sound speed / frequency)
 
@@ -288,6 +296,7 @@ uint8_t transd_array_calcfocus( /*t_transd_array *transd_array,*/ const uint8_t 
 
 				Pij = ( Dij * 255 ) / W  (phase of the ij transducer to have 0° of phase at the focus point)
 			*/
+			/*
 			dist_x = dist_x - focus_x; //distance on the x axis
 			dist_y = dist_y - focus_y; //distance on the y axis
 			distance = (dist_x * dist_x) + (dist_y * dist_y) + (focus_z * focus_z); //squared distance
@@ -296,7 +305,13 @@ uint8_t transd_array_calcfocus( /*t_transd_array *transd_array,*/ const uint8_t 
 			phase = (( distance * 2550) / 860); //(dist * 255 / 8.6) //As the distance is multiplied by 10, this equation does an extra by 10 division
 			phase += transd->phase_comp; //adds the phase compensation. This is the total phase displacement that the ware does between the transducer and the focal point.
 
-			transd->pattern = transd_getPattern( /*phase_res,*/ phase, duty_cycle );
+			#ifdef USE_TWINTRAP
+			if(t_dist_x >= focus_x) {
+				phase += 180;
+			}
+			#endif
+
+			transd->pattern = transd_getPattern( /phase_res/ phase, duty_cycle );
 
 			#ifdef DEBUG
 			transd_array_debug[x][y].dist=distance/10;
@@ -305,7 +320,26 @@ uint8_t transd_array_calcfocus( /*t_transd_array *transd_array,*/ const uint8_t 
 			#endif
 			
 			transd++; //if you change the order of iteration, this line needs to change (when iterating the first dimension then the second dimension, we replicate the order that the compiler puts the elements in linear memory)
-		
+			*/
+			
+			/* switched to float because the loss of precision of the int was affecting the phase accuracy badly */
+			dist_x = (TRANS_DIAMETER / 2) + ((TRANS_DIAMETER+TRANS_SEPARATION) * x); //calculates the x position of the center of the transducer on the array
+			dist_y = (TRANS_DIAMETER / 2) + ((TRANS_DIAMETER+TRANS_SEPARATION) * y); //calculates the y position of the center of the transducer on the array
+			dist_x = dist_x - focus_x; //distance on the x axis
+			dist_y = dist_y - focus_y; //distance on the y axis
+			dist_z = focus_z; //distance on the z axis
+			dist = (dist_x * dist_x) + (dist_y * dist_y) + (dist_z * dist_z);
+			dist = sqrt(dist);
+			
+			fphase = (dist / 8.65) * 255;
+			fphase += transd_array[x][y].phase_comp;
+			phase = (uint8_t) fmod(fphase + 0.5, 255);
+			//phase += transd->phase_comp; //adds the phase compensation. This is the total phase displacement that the ware does between the transducer and the focal point.
+			
+			//transd->pattern = transd_getPattern( phase, duty_cycle );
+			transd_array[x][y].pattern = transd_getPattern( phase, duty_cycle );
+			
+			//transd++; //if you change the order of iteration, this line needs to change (when iterating the first dimension then the second dimension, we replicate the order that the compiler puts the elements in linear memory)
 		}
 	}
 		
@@ -555,7 +589,8 @@ uint16_t transd_getPattern( /*const uint8_t phase_res,*/ const uint8_t phase, co
 		2   -> ___#####__ (72°)
 		8   -> ##_____### (5 amp, 8 ph)
 	*/
-	bits_phase = (phase * ARRAY_PHASERES) / 255; //equation for phase domain [0,255]
+	bits_phase = ((phase + (127/ARRAY_PHASERES)) * ARRAY_PHASERES) / 255; //equation for phase domain [0,255] // "+ (127/ARRAY_PHASERES)" to round half_up
+
 
 	/* DEPRECATED
 	//sets the (Nth + 1) bit = 1 (00001000b for n = 3) then subtracts one to make all the lesser bits = 1 (00000111b for n = 3)
