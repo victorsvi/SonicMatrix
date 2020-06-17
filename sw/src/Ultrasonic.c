@@ -334,6 +334,7 @@ uint8_t transd_array_calcfocus( /*t_transd_array *transd_array,*/ const uint8_t 
 			fphase = (dist / 8.65) * 255;
 			fphase += transd_array[x][y].phase_comp;
 			phase = (uint8_t) fmod(fphase + 0.5, 255);
+			phase = 255 - phase; // The software was calculating whats the phase that the wave would arrive at focal point and assuming this phase as phase delay. But it needed to complement that calculated phase to assume as phase delay.
 			//phase += transd->phase_comp; //adds the phase compensation. This is the total phase displacement that the ware does between the transducer and the focal point.
 			
 			//transd->pattern = transd_getPattern( phase, duty_cycle );
