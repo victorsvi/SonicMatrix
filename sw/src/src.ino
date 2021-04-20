@@ -1,40 +1,16 @@
-
-
-/*
-	IMPORTANTE! Calcular o foco em tempo real é muito lento (cerca de 18ms por cálculo)
-	
-	No main, usar a array_calc_focus e copiar as patterns para outro array. Esse outro array deve
-	armazenar vários "passos", de forma que o conjunto dos passos forme uma tragetória.
-	
-	O destino é informado pela serial, o arduino (que sabe a origem) vai fazer uma linha reta até o destino, colocando todos os "passos" nesse array antes de iniciar (deve demorar cerca de 180ms para 100 passos).
-*/
-
-/*
-	UPGRADES
-	
-	TRAJ: Ao invés de indexar o movimento por passo em um eixo de referência, indexar pelo tempo ou por unidade de distância na reta do deslocamento.
-	TRAJ: Se a trajetória tiver mais que TRAJ_MAXSTEPS, utilizar um valor maior que TRAJ_RES entre os steps.
-	Decidir qual licença atribuir ao projeto e documentar ns arquivos
-*/
-
-/*
-	BUGS
-	
-	Se a velocidade for muito lenta no eixo, pode dar overflow no timer :o
-	Se o deslocamento tiver mais de TRAJ_MAXSTEPS milimetros em um eixo, o movimento é cortado.
-*/
-
 /* 
  * PARTICLE MANIPULATION USING ULTRASONIC MATRIX
  *
- * This code implements a driver board for a ultrasonic matrix capable
- * of generating a focal point by individually adjusting the phase of
- * each transducer of the matrix in order to make the waves arrive in
- * phase at the focal point, creating a constructive interference and 
- * increasing sound pressure.
+ * This code implements software for a driver board for a ultrasonic 
+ * matrix capable of generating a focal point by individually adjusting 
+ * the phase of each transducer of the matrix in order to make the waves 
+ * arrive in phase at the focal point, creating a constructive interference 
+ * and increasing sound pressure.
  * 
  * The board is capable of moving the focal point along a coordinate
- * frame.
+ * frame. This implementation supports the calculation of constant speed
+ * straight line tragectories between the current position of the focal point
+ * and the new position recieved by serial commands.
  *
  * The interface consists of a serial input and defined commands (see
  * input_parse and input_parse_token documentation for more info).
@@ -52,6 +28,14 @@
  * to other sizes. Just be careful to not run out of dynamic memory by
  * increasing the output buffer size.
  *
+ * The Arduino doesn't have the computation power required to calculate the
+ * correcy phase for each transducer in real time. It can barely update the
+ * output ports (64 in my tests) at the required frequency for the minimum
+ * phase resolution (40Khz with pi/4 = 320 kHz). To work around this problem,
+ * the phase of each transducer for each waypoint are calculated, translated
+ * to the ports variables and stored in a buffer vector at the same order that
+ * they will be read during the execution of the movement.
+ *
  * TO COMPILE:
  * To perform a very fast check if there's input serial data, the Arduino core library
  * must be modified. The modification is to place the variables 
@@ -63,11 +47,29 @@
  * by Victor Salvi (victorsvi@gmail.com), 2020.
  */
  
+/*
+ * KNOWN BUGS
+ *
+ * TRAJECTORY: If the speed in the trajectory indexing axys is too slow, the time between steps can overflow.
+ * TRAJECTORY If the number of waypoints for a displacement exceeds TRAJ_MAXSTEPS the displacement is truncated.
+ */
+ 
+/*
+ * FUTURE UPGRADES
+ *
+ * TRAJECTORY: at the moment one axys is chosen to index and calculate the trajectory 
+ * steps (waypoint each milititer in x axys, for example). This can lead to a imprecise 
+ * speed at when the trajectory is at a high angle in relation to the indexing axys. A more 
+ * precise option would be to index by vectorial displacement (waypoint each milititer in the 
+ * actual diretion of the movement, for example). Note that the time between steps follows
+ * the same principle and must be adjusted accordingly.
+ */
+ 
 #include <stdint.h>
 #include <Arduino.h>
 #include "Ultrasonic.h"
 #include "Debug.h"
-//#include "Timer4.h"
+//#include "Timer4.h" //Timer4 would be responsible for updating the output ports at 320kHz but it wasn't possible. Now the signal gerenation is in a assembly subroutine.
 #include "Timer3.h"
 #include "Math.h"
 
@@ -97,7 +99,7 @@
 
 /* PROTOTYPES */
 
-ISR( TIMER4_COMPA_vect );
+/*ISR( TIMER4_COMPA_vect );*/
 ISR( TIMER3_COMPA_vect );
 void transd_array_load ( /*t_transd_array *transd_array*/ );
 void output_reset ();
@@ -311,9 +313,7 @@ volatile uint8_t traj_step_idx = 0, traj_step_num = 0; // current step and numbe
 volatile uint8_t array_phase_idx = 0; // current phase index of the signal (which bit of the pattern is being outputted)
 enum e_mode mode; // mode of operation
 
-/*t_transd_array *transd_array = NULL;*/
-
-uint8_t traj_port_buffer[TRAJ_MAXSTEPS][ARRAY_PHASERES][10]; //buffers the ports state for each coordinate (x,y,z) of the movement, for each slice of the wave period, for each PORT (this project uses 10 ports)
+uint8_t traj_port_buffer[TRAJ_MAXSTEPS][ARRAY_PHASERES][10]; //buffers the ports state for each step of the movement, for each slice of the wave period, for each PORT (this project uses 10 ports)
 
 volatile uint8_t *port_buffer_step_addr = &traj_port_buffer[0][0][0]; //holds the address for the section of the traj_port_buffer vector for the current traj_step_idx (must be assigned with &traj_port_buffer[traj_step_idx][0][0] when traj_step_idx is changed)
 
@@ -345,12 +345,6 @@ void setup () {
 	
 	//setTimer4(); //programs the timer 4 (signal generation)
 	
-	/*transd_array = transd_array_init( ARRAY_SIZE_X, ARRAY_SIZE_Y, TRANS_DIAMETER, TRANS_SEPARATION, ARRAY_PHASERES );
-	if( transd_array == NULL ) {
-		#ifdef DEBUG
-		DEBUG_MSG("The transducer array pointer is null")
-		#endif
-	}*/
 	transd_array_load (/*transd_array*/); // loads the pin number and phase compensation to the matrix
 
 	#ifdef DEBUG_MAP
