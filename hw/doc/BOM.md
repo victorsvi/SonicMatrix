@@ -1,6 +1,8 @@
 # TRANSDUCER ARRAY BOARD
 ### Bill of Materials
 
+|Quatity|Part Number|Description|
+|---|---|---|
 |1|AtMega 2560|Arduino Mega board|
 |64|TCT-40-16T|16mm diameter 40kHz ultrasonic transmitter|
 |32|TC4427|dual channel power mosfet SOIC|
