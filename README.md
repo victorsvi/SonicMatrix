@@ -5,4 +5,4 @@ The project is composed of a custom board with 64 ultrasonic transducers that ar
 
 The code is meant to be compiled and uploaded from the Arduino IDE.
 
-You can find more information about what is a ultrasonic matrix and how it can manipulate particles in the file [Manipulação Acústica com Matriz Ultrassônica](../blob/master/Manipulação Acústica com Matriz Ultrassônica.pdf) (written in portuguese).
+You can find more information about what is a ultrasonic matrix and how it can manipulate particles in the file "Manipulação Acústica com Matriz Ultrassônica.pdf" (written in portuguese).
