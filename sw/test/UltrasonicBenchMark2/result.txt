@@ -1,7 +1,0 @@
-10 bit resolution: 16042us
-
-10 bit resolution: 14998us (withoud pattern)
-
-10 bit resolution: 6428us (without sqrt)
-
-parse pattern as binary from serial: 94us

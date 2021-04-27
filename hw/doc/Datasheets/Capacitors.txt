@@ -1,2 +1,0 @@
-100 units
-1206 SMD ceramic 2.2uF

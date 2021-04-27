@@ -1,3 +1,5 @@
+/* TEST PROGRAM TO VALIDATE THE SERIAL INPUT PARSING */
+
 #include <stdint.h>
 
 struct s_state {

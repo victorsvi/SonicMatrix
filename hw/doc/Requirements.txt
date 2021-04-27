@@ -1,8 +1,0 @@
--Fazer protoboard e sketch para testar 1 canal-
-Power Supply 12-20v 
-Polarity protection with diode
-regulador 9 ou 12v p/ vin arduino c/ jumper pra pular e usar usb
-Utilizar apenas uma placa
-Como testar desvio de fase
-Como testar polaridade do transdutor
-target a single sided board. if not possible maximum a 2 sided but the trough holes will need to have jumpers

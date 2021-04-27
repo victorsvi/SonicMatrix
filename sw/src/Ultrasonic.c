@@ -1,4 +1,6 @@
 /*
+ * PARTICLE MANIPULATION USING ULTRASONIC MATRIX
+ *
  * This file implements functions to manage a ultrasonic matrix.
  * The main objective is to create a focal point near the matrix
  * where the sound pressure will peak.
@@ -27,7 +29,7 @@
  *
  * As an example of how to interpret the pattern and create an output
  * signal, lets analyze a pattern represented in binary for a phase
- * resolution of 10 bits. The ones means output active and zeros means
+ * resolution of 10 bits. The ones mean output active and zeros mean
  * output inactive:
  * (msb) 0000111100 (lsb)
  * As only 4/10 of the period is active, the duty cycle is 40%

@@ -8,7 +8,7 @@
 
 //#define DEBUG
 
-//when debbuging on Arduino
+//when debbuging on Arduino. Works only when called from the "main" file, in which the Serial is instantiated.
 //#define DEBUG_MSG(msg) Serial.Print(msg);Serial.Print(" on ");Serial.Print(__func__);Serial.Print(":");Serial.Print(__FILE__);Serial.Print(":");Serial.Print(__LINE__);
 
 //when debbuging on Windows/Linux

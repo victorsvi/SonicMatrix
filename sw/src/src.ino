@@ -38,11 +38,12 @@
  *
  * TO COMPILE:
  * To perform a very fast check if there's input serial data, the Arduino core library
- * must be modified. The modification is to place the variables 
- * "volatile rx_buffer_index_t _rx_buffer_head = 0;" and 
- * "volatile rx_buffer_index_t _rx_buffer_tail = 0;" in the public section of the 
- * HardwareSerial.h header. Note that the compiling process may make a copy of the
- * core files, so check if this modification is done in the cached files also.
+ * must be modified. The modification is to move the declaration the variables 
+ * "volatile rx_buffer_index_t _rx_buffer_head = 0;" 
+ * "volatile rx_buffer_index_t _rx_buffer_tail = 0;" 
+ * from the private section to the public section of the HardwareSerial.h header. 
+ * Note that the compiling process may make a copy of the core files to the %appdata%
+ * in Windows, so check if this modification is done in the cached files also.
  *
  * by Victor Salvi (victorsvi@gmail.com), 2020.
  */
@@ -429,7 +430,9 @@ void loop () {
 	asm volatile goto ( 
 			
 		"ldi	r17,			%[ph_res]		\n" //load array_phase_idx
-		"rjmp	2f								\n" //jumps the nops
+		"rjmp	2f								\n" //jumps the nops. The start of the assembly subroutine includes the loading of the external variables into the register. 
+													//The nops are executed only in the loop inside the assembly subroutine, to compensate for the time taken to execute the start of the subroutine.
+													//Basically, both the loop inside the subroutine and the external loop that includes the loading of the variables must execute in exactly 50 cpu cycles.
 			
 		"1:										\n" //loop to output an entire period
 		
@@ -439,7 +442,7 @@ void loop () {
 
 		"2:										\n" //
 
-		//The vecAddr is incremented. Its possible because of the order of the buffer vector dimensions
+		//The vecAddr is incremented. The order of the output buffer vector dimensions were carefully chosen so whe assembly routine can iterate by incrementing the adress
 		"ld		r16,			%a[vecAddr]+	\n" //PORTA
 		"out	0x02,			r16				\n" //PORTA (until G the ports can be addressed directly)
 		"ld		r16,			%a[vecAddr]+	\n" //PORTB
@@ -477,7 +480,7 @@ void loop () {
 	); 
 	
 	TIMSK0 = TIMSK0_copy; //enable timer0
-	//it accepts serial data even when the output is active, but the parsing and executing of the commands will be slower as the timer 4 will generate a lot of interrupts.
+	//it accepts serial data even when the output is active, but the parsing and executing of the commands will be slower as the timer 0 will generate a lot of interrupts.
 	//it's recommended to send a "i" command before sending commands while the output is active;
 	if(Serial.available()) { // if there's input data on serial line
 		input_parse();
